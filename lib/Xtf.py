@@ -1,9 +1,9 @@
 import pyxtf
 import cv2
 import numpy as np
-import Utils as ut
+import lib.Utils as ut
 import logging
-
+import glob
 class Xtf:
 
     def getPingTime(self, ping_no):
@@ -84,63 +84,31 @@ class Xtf:
     def gammaCorrect(self, gamma):
         self.fullImage = ut.gammaCorrection(self.rawImage, gamma)
 
-
-    def generateDistanceArray(self, base_distance=1.3, GK=False):
+    
+    def extractTrackWGS84(self) -> np.ndarray:
         """
-        Function generates continuous velues for distance between pings
-        based on GPS data in xtf file
-        :return: array of distances (meters)
+        Extracts track coordinates for each ping as np array
         """
-        print('Offset calculation ...')
         y = [self.sonar_packets[i].ShipYcoordinate
                               for i in range(self.pings_num)]
         x = [self.sonar_packets[i].ShipXcoordinate
                               for i in range(self.pings_num)]
+        return np.array((x,y)).transpose()
+    
 
-        # plt.plot(x,y)
-        # plt.show()
+    def loadGK(self, coord_array : np.ndarray):
+        """
+        Load numpy array of GK coordinates
+        that must be generated separately with Surfer or smth like that
+        """
+        x_arr, y_arr = coord_array
+        if len(x_arr) + len(y_arr) != self.pings_num * 2:
+            logging.log('Dimension of GK data is wrong')
+            return 0
+        for i, x, y in zip(range(len(x_arr)), x_arr, y_arr):
+            self.sonar_packets[i].ShipYCoordinateGK = y
+            self.sonar_packets[i].ShipXCoordinateGK = x
 
-        if GK:
-            GK_coord = np.zeros((len(y), 2))
-            for i in range(len(y)):
-                GK_coord[i,:] = ut.GaussKruger(x[i], y[i])
-            distance_raw = [0.0] + [ut.getDistance(GK_coord[i,0], GK_coord[i,1], GK_coord[i-1,0], GK_coord[i-1,1])
-                            for i in range(1, len(GK_coord))]
-        else:
-            distance_raw = [0.0] + [ut.haversine((x[i], y[i]), (x[i-1], y[i-1]))
-                            for i in range(1, len(self.sonar_packets))]
-
-        distance = np.zeros((len(distance_raw)))
-        self.offset = np.zeros((len(distance_raw)))
-
-        # Interpolate distances between pings, where GPS data is constant
-        count = 0
-        i0 = 0
-        for i in range(len(distance_raw)):
-            if distance_raw[i] == 0.0:
-                count += 1
-            else:
-                # Update parameter in counted group
-                count += 1
-                for j in range(i0, i0 + count):
-                    distance[j] = distance_raw[i] / count
-                count = 0
-                i0 = i+1
-
-        # Calculate distance offset for each ping
-        for i in range(len(distance)):
-            j = i
-            dist = 0.0
-            time0 = self.sonar_packets[i].Second + self.sonar_packets[i].HSeconds/100
-            while dist < base_distance:
-                dist += distance[j]
-                if j-1 < 0:
-                    break
-                else:
-                    j = j-1
-            time1 = self.sonar_packets[j].Second + self.sonar_packets[j].HSeconds/100
-            self.offset[i] = (abs(time0 - time1) % 60 )
-            logging.debug('Offset array[%i] = %f sec' % (i, self.offset[i]))
 
 
     def __init__(self, xtf_file):
@@ -176,10 +144,19 @@ class Xtf:
         t1 = ut.timeToSec(*t1)
         self.pings_per_sec = self.pings_num/(t1-t0)
 
-        self.generateDistanceArray()
         self.generateFullImage()
 
 
 if __name__ == '__main__':
-    pass
-
+    xtf_files = glob.glob('test/*.xtf')
+    for xtf_file in xtf_files:
+        gps_file = '.'.join(xtf_file.split('.')[:-1]) + '.csv'
+        sonar_data = Xtf(xtf_file)
+        gps = sonar_data.extractTrackWGS84()
+        print(gps.shape)
+        ut.npToCsv(gps_file, gps)
+        # sonar_data.generateFullImage()
+        # sonar_data.gammaCorrect(2)
+        # image = cv2.resize(sonar_data.fullImage, (300, 600))
+        # cv2.imshow(xtf_file, image)
+        # cv2.waitKey()

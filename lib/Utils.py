@@ -249,6 +249,8 @@ def MSE(im_train, im_query, ty):
     return np.mean(((im1 - im2)**2))
 
 
+
+
 if __name__ == '__main__':
     # print(GaussKruger(72.432, 34.563))
     PATH = 'data/panorama_test_03'
