@@ -3,7 +3,7 @@ import numpy as np
 class CoordinatesData:
 
     def __init__(self):
-        return
+        pass
 
 class Navigation:
 

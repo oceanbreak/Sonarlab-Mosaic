@@ -80,6 +80,8 @@ class Xtf:
         self.fullImage = (fullImage - np.amin(fullImage)) / (np.amax(fullImage) - np.amin(fullImage))
         self.rawImage = np.copy(self.fullImage)
 
+        return self.rawImage
+
 
     def gammaCorrect(self, gamma):
         self.fullImage = ut.gammaCorrection(self.rawImage, gamma)
@@ -101,7 +103,7 @@ class Xtf:
         Load numpy array of GK coordinates
         that must be generated separately with Surfer or smth like that
         """
-        x_arr, y_arr = coord_array
+        x_arr, y_arr = coord_array.transpose()
         if len(x_arr) + len(y_arr) != self.pings_num * 2:
             logging.log('Dimension of GK data is wrong')
             return 0

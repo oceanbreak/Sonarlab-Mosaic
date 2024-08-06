@@ -15,3 +15,19 @@ def npToCsv(out_name : str, array : np.ndarray):
     print(f'{out_name} write successfully')
 
 
+def loadCsvGK(in_name : str, delimeter=';') -> np.ndarray:
+    """
+    Loading Csv for pair of coordinates in Gauss Kruger
+    """
+    x = []
+    y = []
+    with open(in_name, 'r') as f_read:
+        for line in f_read:
+            line = line.strip()
+            _, _,in_x, in_y = line.split(delimeter)
+            x.append(float(in_x))
+            y.append(float(in_y))
+
+    return np.array([x,y]).transpose()
+
+
