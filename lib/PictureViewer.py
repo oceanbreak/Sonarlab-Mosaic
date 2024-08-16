@@ -1,20 +1,20 @@
 """"
-Module for plotting sonar data
-based in rectangular coordinates
+Module for showing pictures
+with ability to change scale
 """
 
 import cv2
 import numpy as np
-from lib.Xtf import Xtf
-from lib.Navigation import Navigation
+from lib.SonarData import SonarData
+
 
 class PictureViewer:
 
-    def __init__(self, canvas_size : tuple, canvas_name : str):
-        self._canvas_name = canvas_name
-        self._canvas_width = canvas_size[0]
-        self._canvas_height = canvas_size[1]
-        self._canvas = np.zeros((self._canvas_height, self._canvas_width)).astype(np.uint8)
+    def __init__(self, image_name : str, image : np.ndarray):
+        self._image_name = image_name
+        self._image_width = image.shape[1]
+        self._image_height = image.shape[0]
+        self._image = image
         self._is_showed = False
 
         # Scaling properties
@@ -28,21 +28,26 @@ class PictureViewer:
         self.scale += 0.1
 
     def updateScale(self):
-        return cv2.resize(self._canvas, (int(self._canvas_width * self.scale), 
-                                         int(self._canvas_height * self.scale)))
+        return cv2.resize(self._image, (int(self._image_width * self.scale), 
+                                         int(self._image_height * self.scale)))
 
-    def show(self):
+    def show(self, delay=0):
         self._is_showed = True
         while self._is_showed:
             show_canvas = self.updateScale()
-            cv2.imshow(self._canvas_name, show_canvas)
-            self.keyHandler()
+            cv2.imshow(self._image_name, show_canvas)
+            self.keyHandler(delay)
 
-    def keyHandler(self):
-        resp = cv2.waitKey()
+    def keyHandler(self, delay):
+        resp = cv2.waitKey(delay)
         if resp & 0xFF == 27:
             self._is_showed = False
         if chr(resp) in ('w', 'W'):
             self.plusScale()
         if chr(resp) in ('s', 'S'):
             self.reduceScale()
+
+
+    def imsave(self, output_file):
+        cv2.imwrite(output_file, self._image)
+        
