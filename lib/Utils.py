@@ -8,6 +8,11 @@ from sklearn import linear_model
 from matplotlib import pyplot as plt
 
 
+############################################################
+#                                                          #
+#                C A L C U L A T I O N S                   #
+#                                                          #
+############################################################
 
 def timeToSec(year, month, day, hour, minute, second, hseconds):
     return year + month * 31 * 24 * 3600 \
@@ -15,6 +20,10 @@ def timeToSec(year, month, day, hour, minute, second, hseconds):
            hour * 3600 + minute * 60 + \
            second + hseconds / 100
 
+def calcDistance(pt1 : tuple, pt2 : tuple):
+    x1, y1 = pt1
+    x2, y2 = pt2
+    return (np.sqrt((x2 - x1)**2 + (y2 - y1)**2))
 
 def haversine(coord_a, coord_b):
     """
@@ -86,6 +95,77 @@ def getDistance(x0, y0, x1, y1):
     Pifagorian distance between two points
     """
     return sqrt( (x0 - x1)**2 + (y0 - y1)**2 )
+
+def degrToLatLon(y, x):
+    lat_deg = int(y)
+    lon_deg = int(x)
+    lat_min = (y - lat_deg) * 60
+    lon_min = (x - lon_deg) * 60
+    lat = 'N' if y > 0 else 'S'
+    lon = 'E' if x > 0 else 'W'
+    return '{} {:.4f} {} {:0>3} {:.4f} {}'.format(lat_deg, lat_min, lat, lon_deg, lon_min, lon)
+
+
+def MSE(im_train, im_query, ty):
+    """
+    Mean squared error between two shifted images
+    :param im_train:
+    :param im_query:
+    :param ty:
+    :return:
+    """
+
+    im_height, im_width = im_train.shape[:2]
+    H = np.identity(3)[:-1, :]
+    H[1,-1] = ty
+
+    im1 = cv2.cvtColor(im_train, cv2.COLOR_RGB2GRAY)
+    im2 = cv2.cvtColor(im_query, cv2.COLOR_RGB2GRAY)
+    im2 =  cv2.warpAffine(im2, H, (im_width, im_height))
+
+    im1 = img_as_float(im1)
+    im2 = img_as_float(im2)
+
+    top_margin = int(im_height/2 - ty/2)
+    bot_margin = int(im_height/2 + ty/2)
+
+    im1 = im1[top_margin:bot_margin, :]
+    im2 = im2[top_margin:bot_margin, :]
+
+
+    # cv2.imshow('1', im1)
+    # cv2.imshow('2', im2)
+    # cv2.waitKey(2)
+
+    return np.mean(((im1 - im2)**2))
+
+
+############################################################
+#                                                          #
+#             I M A G E    A N A L I S Y S                 #
+#                                                          #
+############################################################
+
+
+def formTranslationRotationMtx(center, translation, rotation, scale):
+    R = np.identity(3)
+    R[:2,:] = cv2.getRotationMatrix2D(center, rotation, scale)
+    
+    # Estimate scale-preserved-translation
+    new_center = np.array(center) + np.array(translation)
+    T = np.identity(3)
+    T[:-1,-1] = np.array(translation) + (new_center*scale - new_center)
+    return T @ R
+
+
+def getSizeFromRotation(input_size, rotation):
+    rot_rad = np.radians(rotation)
+    width, height = input_size
+
+    width_new = np.abs(width * np.cos(rot_rad)) + np.abs(height * np.sin(rot_rad))
+    height_new = np.abs(height * np.cos(rot_rad)) + np.abs(width * np.sin(rot_rad))
+
+    return (int(width_new), int(height_new))
 
 
 def gammaCorrection(image, gamma):
@@ -205,48 +285,6 @@ def goRansac(X, y, thresh, show_plot=False, label = ("Input", "Response")):
     return inlier_mask
 
 
-def degrToLatLon(y, x):
-    lat_deg = int(y)
-    lon_deg = int(x)
-    lat_min = (y - lat_deg) * 60
-    lon_min = (x - lon_deg) * 60
-    lat = 'N' if y > 0 else 'S'
-    lon = 'E' if x > 0 else 'W'
-    return '{} {:.4f} {} {:0>3} {:.4f} {}'.format(lat_deg, lat_min, lat, lon_deg, lon_min, lon)
-
-
-def MSE(im_train, im_query, ty):
-    """
-    Mean squared error between two shifted images
-    :param im_train:
-    :param im_query:
-    :param ty:
-    :return:
-    """
-
-    im_height, im_width = im_train.shape[:2]
-    H = np.identity(3)[:-1, :]
-    H[1,-1] = ty
-
-    im1 = cv2.cvtColor(im_train, cv2.COLOR_RGB2GRAY)
-    im2 = cv2.cvtColor(im_query, cv2.COLOR_RGB2GRAY)
-    im2 =  cv2.warpAffine(im2, H, (im_width, im_height))
-
-    im1 = img_as_float(im1)
-    im2 = img_as_float(im2)
-
-    top_margin = int(im_height/2 - ty/2)
-    bot_margin = int(im_height/2 + ty/2)
-
-    im1 = im1[top_margin:bot_margin, :]
-    im2 = im2[top_margin:bot_margin, :]
-
-
-    # cv2.imshow('1', im1)
-    # cv2.imshow('2', im2)
-    # cv2.waitKey(2)
-
-    return np.mean(((im1 - im2)**2))
 
 
 
