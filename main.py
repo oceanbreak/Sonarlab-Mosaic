@@ -1,4 +1,4 @@
-from lib.Xtf import Xtf
+from lib.SonarData import SonarData
 import lib.Utils as ut
 from lib.io import npToCsv, loadCsvGK
 import glob
@@ -12,7 +12,7 @@ if __name__ == '__main__':
     navi_files = glob.glob('test/*GK.csv')
     for xtf_file in xtf_files:
         gps_file = '.'.join(xtf_file.split('.')[:-1]) + '.csv'
-        sonar_data = Xtf(xtf_file)
+        sonar_data = SonarData(xtf_file)
         gps = sonar_data.extractTrackWGS84()
         print(gps.shape)
         npToCsv(gps_file, gps)
