@@ -23,7 +23,17 @@ def timeToSec(year, month, day, hour, minute, second, hseconds):
 def calcDistance(pt1 : tuple, pt2 : tuple):
     x1, y1 = pt1
     x2, y2 = pt2
-    return (np.sqrt((x2 - x1)**2 + (y2 - y1)**2))
+    return np.array((np.sqrt((x2 - x1)**2 + (y2 - y1)**2)))
+
+
+def calcRotBtwPoints(pt1, pt2):
+    vector1 = np.array((0.0, 1.0)) # Vertical vector
+    v_norm = calcDistance(pt1, pt2)
+    vector2 = np.array(((pt2[0] - pt1[0]) / v_norm, (pt2[1] - pt1[1]) / v_norm))
+    sign = np.sign(vector1[0] - vector2[0])
+    rot = sign * np.arccos(np.dot(vector1, vector2))
+    return np.degrees(rot)
+
 
 def haversine(coord_a, coord_b):
     """
@@ -87,14 +97,12 @@ def GaussKruger(dLon, dLat, zone=None):
     N = I + II * (Lon - Lon0) ** 2 + III * (Lon - Lon0) ** 4 + IIIA * (Lon - Lon0) ** 6
     E = E0 + IV * (Lon - Lon0) + V * (Lon - Lon0) ** 3 + VI * (Lon - Lon0) ** 5
 
-    return (N, E)
+    return (E, N)
 
 
-def getDistance(x0, y0, x1, y1):
-    """
-    Pifagorian distance between two points
-    """
-    return sqrt( (x0 - x1)**2 + (y0 - y1)**2 )
+
+
+
 
 def degrToLatLon(y, x):
     lat_deg = int(y)
