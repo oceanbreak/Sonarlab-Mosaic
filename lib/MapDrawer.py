@@ -9,6 +9,7 @@ from lib.dtypes import GKpoint, MapPoint
 from lib.Utils import getSizeFromRotation, formTranslationRotationMtx
 import numpy as np
 import cv2
+from matplotlib import pyplot as plt
 
 class SonarImageGK:
     """
@@ -50,8 +51,9 @@ class SonarImageGK:
     def equalScale(self, sizeXM, sizeYM, dst_scale):
         new_size_x = sizeXM * dst_scale
         new_size_y = sizeYM * dst_scale
-        if new_size_y < 3: new_size_y = 3
-        if new_size_x < 3: new_size_y = 3
+        # Add thickness to avoid white
+        if new_size_y < dst_scale * 2: new_size_y = int(dst_scale * 2) + 3 
+        if new_size_x < dst_scale * 2: new_size_y = int(dst_scale * 2) + 3
         return (int(new_size_x), int(new_size_y))
 
 
@@ -70,6 +72,7 @@ class SonarImageGK:
         # Warp image
         self.image = cv2.warpPerspective(self.image, transform_mtx, new_size)
         self.alpha = cv2.warpPerspective(self.alpha, transform_mtx, new_size)
+
         
         
 class MapDrawer:
@@ -92,11 +95,12 @@ class MapDrawer:
         """
         lonTL, latTL = coord_TL
         lonBR, latBR = coord_BR
-        width = int((lonBR - lonTL) * self.map_scale)
+        width = int((lonBR - lonTL) * self.map_scale) 
         height = int((latTL - latBR) * self.map_scale)
 
         # Store canvas and limits
         self.canvas = 255*np.ones((height, width, 3)).astype(np.uint8)
+        self.alpha = 255*np.zeros((height, width, 3)).astype(np.uint8)
         self.XminGK = lonTL
         self.XmaxGK = lonBR
         self.YmaxGK = latTL
@@ -110,10 +114,35 @@ class MapDrawer:
         stripe_center = self.PtGKtoImg(stripe.center_coordinate_GK)
         TL_corner = (stripe_center[0] - stripe.width // 2,
                     stripe_center[1] - stripe.height // 2)
+        
+        # Calculate alpha
+        background = self.canvas[TL_corner[1] : TL_corner[1] + stripe.height,
+                    TL_corner[0] : TL_corner[0] + stripe.width, :]
+        
+
+        inv_alpha = 255 - stripe.alpha
+
+        bg = background.astype(np.float32) / 255
+        al = stripe.alpha.astype(np.float32) / 255
+
+        # inv_alpha = cv2.dilate(1.0 - al, kernel)
+        inv_alpha = 1.0 - al
+        msk = bg * (inv_alpha)
+
+        new = msk + stripe.image.astype(np.float32) / 255
+
+        # Return on canvas
         self.canvas[TL_corner[1] : TL_corner[1] + stripe.height,
-                    TL_corner[0] : TL_corner[0] + stripe.width, :] = stripe.image
+                    TL_corner[0] : TL_corner[0] + stripe.width, :] = (255.0 * new).astype(np.uint8)
+        
+        # Update canvas alpha
+        raw_alpha = self.alpha[TL_corner[1] : TL_corner[1] + stripe.height,
+                    TL_corner[0] : TL_corner[0] + stripe.width]
 
+        res_alpha = cv2.add(raw_alpha, stripe.alpha)
 
+        self.alpha[TL_corner[1] : TL_corner[1] + stripe.height,
+                    TL_corner[0] : TL_corner[0] + stripe.width] = res_alpha
 
 
     def PtGKtoImg(self, pt : GKpoint):
@@ -123,55 +152,21 @@ class MapDrawer:
         return MapPoint((int(x), int(y)))
 
 
-    def DekartToImg(self, pt):
-        x, y = pt
-        return (x, -y)
-    
-
-    def ImgToDekart(self, pt):
-        x, y = pt
-        return (x, -y)
-
-
     def loadSonarImg(self, sonar_image):
         self.sonar_images.append(SonarImageGK(sonar_image))
-
-
-    def calculateTrackMargins(self):
-
-        print('Calculating margins')
-        Xmin = np.min(self.track.data[:,0]) 
-        Xmax = np.max(self.track.data[:,0]) 
-        Ymin = np.min(self.track.data[:,1]) 
-        Ymax = np.max(self.track.data[:,1]) 
-
-        # Save margins
-        self.margin_navi = (Xmin, Ymin, Xmax, Ymax)
-
-        self.canvas = 255*np.ones((int((Ymax - Ymin) * (1/self.map_scale)) , 
-                                   int((Xmax - Xmin) * (1/self.map_scale)), 3)).astype(np.uint8)
-
-        self.x_offset = Xmin * (1/self.map_scale)
-        self.y_offset = Ymin * (1/self.map_scale)
-
-        offseted_track_x = self.track.data[:,0] *  (1/self.map_scale) - Xmin * (1/self.map_scale)
-        offseted_track_y = int((Ymax - Ymin) * (1/self.map_scale)) -  \
-            (self.track.data[:,1] *  (1/self.map_scale) - Ymin * (1/self.map_scale)) # Reverse Y axis
-        self.offseted_track = np.vstack((offseted_track_x, offseted_track_y)).transpose()
-
-        print(f'X offset = {self.x_offset}, Y offset = {self.y_offset}')
-        print(f'Canvas size ({self.canvas.shape})')
-
-
-    def drawTrack(self):
-        radius = int(1 / self.map_scale) if self.map_scale < 1 else 1
-        thickness = int(1 / self.map_scale) if self.map_scale < 1 else 1
-        self.drawPoints(self.offseted_track, radius=radius, color=(0,0,255), thickness=thickness)
 
 
     def getImage(self):
         return self.canvas
     
+    def getAlpha(self):
+        return self.alpha[:,:,0]
+    
+    def getTransparent(self):
+        out = np.zeros((self.canvas.shape[0], self.canvas.shape[1], 4))
+        out[:,:,:3] = self.canvas
+        out[:,:,3] = self.alpha[:,:,0]
+        return out
 
     def getMarginMaps(self):
         # Order: TopLeft, BotLeft, BotRight, TopRight
