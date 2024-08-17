@@ -11,11 +11,6 @@ class TrackSmoother:
         self.rotations = []
         for stripe in sonar_stripes_array:
             self.track.append((stripe.lon, stripe.lat))
-        
-    def smoothTrack(self, lmbd):
-        track = np.array(self.track)
-        self.track = spline_filter(track, lmbd)
-        self.track = list(track)
 
     def smoothRotations(self, window, order):
         self.rotations = savgol_filter(self.rotations, window, order)
