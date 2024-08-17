@@ -8,10 +8,10 @@ import glob
 
 class SonarStripe:
 
-    def __init__(self, image : np.ndarray, coordinates : tuple, size_meters : tuple):
+    def __init__(self, image : np.ndarray, coordinatesGK : tuple, size_meters : tuple):
         self.image = image
-        self.lon = coordinates[0]
-        self.lat = coordinates[1]
+        self.lon = coordinatesGK[0]
+        self.lat = coordinatesGK[1]
         self.widthM = size_meters[0]
         self.heightM = size_meters[1]
 
@@ -38,14 +38,14 @@ class SonarData:
 
 
     def getPingCoordinates(self, ping_no):
-        lon = self.sonar_packets[ping_no].ShipXCoordinate
-        lat = self.sonar_packets[ping_no].ShipYCoordinate
+        lon = self.sonar_packets[ping_no].ShipXcoordinate
+        lat = self.sonar_packets[ping_no].ShipYcoordinate
         return (lon, lat)
 
 
     def getPingCoordinatesGK(self, ping_no):
-        lon = self.sonar_packets[ping_no].ShipXCoordinateGK
-        lat = self.sonar_packets[ping_no].ShipYCoordinateGK
+        lon = self.sonar_packets[ping_no].ShipXcoordinateGK
+        lat = self.sonar_packets[ping_no].ShipYcoordinateGK
         return (lon, lat)
 
 
@@ -92,16 +92,6 @@ class SonarData:
         return cur_frame
 
 
-
-    # def getSonarStripe(self, ping_no):
-    #     if 0 <= ping_no < self.pings_num:
-    #         l_chan = self.sonar_packets[ping_no].data[0]
-    #         r_chan = self.sonar_packets[ping_no].data[1]
-    #         return (l_chan, r_chan)
-    #     else:
-    #         return None
-        
-
     def getSonarStripeGK(self, ping_start, ping_stop) -> SonarStripe:
         """ 
         Return SonarStripe object with
@@ -111,7 +101,7 @@ class SonarData:
         if ping_start == ping_stop:
             return None
         # Reverse, because image Y 0 starts from top
-        img = self.fullImage[-ping_start:-ping_stop:-1, :]
+        img = self.fullImage[-ping_start-1:-ping_stop-1:-1, :]
         
         lon1, lat1 = self.getPingCoordinatesGK(ping_start)
         lon2, lat2 = self.getPingCoordinatesGK(ping_stop)
@@ -126,17 +116,17 @@ class SonarData:
     
 
     def splitIntoGKStripes(self):
-        # Split sonar image in stripes with equal coordinates
+        # Split sonar image in stripes with equal coordinates 
+        # Also form filtered track
         sonar_stripes = []
         ping_start = 0
         ping_no = 0
-        prev_lon = self.sonar_packets[0].ShipXCoordinateGK
-        prev_lat = self.sonar_packets[0].ShipYCoordinateGK
+        prev_lon = self.sonar_packets[0].ShipXcoordinateGK
+        prev_lat = self.sonar_packets[0].ShipYcoordinateGK
         for sonar_packet in self.sonar_packets[1:]:
             ping_no += 1
-            print(f'Ping no {ping_no}')
-            lon = sonar_packet.ShipXCoordinateGK
-            lat = sonar_packet.ShipYCoordinateGK
+            lon = sonar_packet.ShipXcoordinateGK
+            lat = sonar_packet.ShipYcoordinateGK
             ping_stop = ping_no
             if prev_lon != lon or prev_lat != lat:
                 stripe = self.getSonarStripeGK(ping_start, ping_stop)
@@ -146,6 +136,7 @@ class SonarData:
                 prev_lon = lon
         print(f'Created {len(sonar_stripes)} sonar stripes')
         return sonar_stripes
+
 
 
     def generateFullImage(self):
@@ -191,8 +182,8 @@ class SonarData:
             logging.log('Dimension of GK data is wrong')
             return 0
         for i, x, y in zip(range(len(x_arr)), x_arr, y_arr):
-            self.sonar_packets[i].ShipYCoordinateGK = y
-            self.sonar_packets[i].ShipXCoordinateGK = x
+            self.sonar_packets[i].ShipYcoordinateGK = y
+            self.sonar_packets[i].ShipXcoordinateGK = x
 
     def getXYT(self):
         """
