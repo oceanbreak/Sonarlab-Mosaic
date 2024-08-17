@@ -36,6 +36,10 @@ class SonarImageGK:
         self.rotation = 0.0
 
 
+    def updateCenterGK(self, new_point_GK):
+        self.center_coordinate_GK = GKpoint(new_point_GK)
+
+
     def getGKcoordTopLeft(self):
         TLx = self.center_coordinate_GK[0] - self.width / (2 * self.scale)
         TLy = self.center_coordinate_GK[1] + self.height / (2 * self.scale)
