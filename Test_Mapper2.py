@@ -3,11 +3,11 @@ from lib.PictureViewer import PictureViewer
 from lib.io import loadCsvGK, npToCsv
 from lib.Georef import Georef
 from lib.SonarData import SonarData
-from lib.TrackSmoother import TrackSmoother
+from lib.TrackProcess import TrackProcess
 import numpy as np
 import cv2
 
-TARGET_SCALE = 1.4
+TARGET_SCALE = 0.4
 MARGIN = 10 # for map canvas, meters
 
 if __name__ == '__main__':
@@ -22,10 +22,18 @@ if __name__ == '__main__':
     sonar_stripes = sonar.splitIntoGKStripes()
 
     # Get rotations
-    smoother = TrackSmoother(sonar_stripes)
+    track_proc = TrackProcess(sonar_stripes)
+    
+    # Update track
+    track_proc.inputCableOut(50)
+    track_proc.updateCableOut()
     # smoother.smoothTrack(3)
-    smoother.getTrackRotations()
-    rotations = smoother.smoothRotations(33, 2)
+    track_proc.smoothRotations(33, 2)
+
+    # Get track and rot
+    rotations = track_proc.getTrackRotations()
+
+    offseted_track = track_proc.getTrack()
     
     print(f'Stripes are {len(sonar_stripes)}, rotations are {len(rotations)}')
 
@@ -34,18 +42,22 @@ if __name__ == '__main__':
     # CALCULATE MARGINS
 
     # sonar_img = SonarImageGK(sonar_stripes[-1], DIST_SCALE).image
+    print('Processing track')
     TL_coordsGK = []
     BR_coordsGK = []
     stripe_imgs = []
-    for stripe, rot in zip(sonar_stripes, rotations):
+
+    for stripe, rot, trackpoint in zip(sonar_stripes, rotations, offseted_track):
         # print(stripe)
         stripe_img = SonarImageGK(stripe, TARGET_SCALE)
+        stripe_img.updateCenterGK(trackpoint)
+
         stripe_img.rotate(rot)
         TL_coordsGK.append(stripe_img.getGKcoordTopLeft())
         BR_coordsGK.append(stripe_img.getGKcoordBotRight())
         stripe_imgs.append(stripe_img)
 
-    print(np.array(TL_coordsGK).shape)
+    print('Estimating map limits')
     TL_np = np.array(TL_coordsGK)
     BR_np = np.array(BR_coordsGK)
 
@@ -68,8 +80,8 @@ if __name__ == '__main__':
     margins = mapGK.getMarginMaps()
 
     cv2.imwrite('test/test_GK_sonar.png', mapGK.getTransparent())
-    ref = Georef('test/test_GK_sonar.georef', margins)
-    ref.make()
+    ref = Georef()
+    ref.make('test/test_GK_sonar.georef', margins)
 
     
 
