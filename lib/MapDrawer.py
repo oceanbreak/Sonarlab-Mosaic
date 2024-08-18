@@ -196,15 +196,9 @@ class MapDrawer:
             pt = tuple([int(x*scaler) for x in pt])
             cv2.circle(self.canvas, pt, radius, color, thickness)
 
+
     def drawMapPoint(self, pt : MapPoint, radius=1, color=(0,0,0), thickness=1):
         cv2.circle(self.canvas, pt, radius, color, thickness)
-
-    
-    def addWeighted(self, center_point : tuple, stripe : np.ndarray, rotation : float = 0.0):
-        pass
-
-    def rotateStripe(self):
-        pass
 
 
     def translationAfterResize(self, image : SonarImageGK, new_size):
