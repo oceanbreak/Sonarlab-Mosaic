@@ -54,7 +54,7 @@ if __name__ == '__main__':
         track_proc = TrackProcess(sonar_stripes)
         
         # Update track
-        track_proc.inputCableOut(100)
+        track_proc.inputCableOut(CABLE_OUT)
         track_proc.updateCableOut()
         track_proc.smoothRotations(33, 2)
         offseted_track = track_proc.getTrack()
