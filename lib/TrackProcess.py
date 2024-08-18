@@ -1,7 +1,7 @@
 from lib.SonarData import SonarStripe
 import lib.Utils as ut
 import numpy as np
-from scipy.signal import spline_filter, savgol_filter
+from scipy.signal import spline_filter, savgol_filter, medfilt
 
 
 class TrackProcess:
@@ -17,6 +17,10 @@ class TrackProcess:
 
     def smoothRotations(self, window, order):
         self.rotations = savgol_filter(self.rotations, window, order)
+
+    
+    def filterRotations(self, window):
+        self.rotations = medfilt(self.rotations, window)
 
 
     def getTrack(self):
