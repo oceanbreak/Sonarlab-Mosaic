@@ -1,6 +1,7 @@
 from lib.Settings import Settings
 from lib.SonarData import SonarData
 from lib.Georef import Georef
+from lib.io import FileNaming
 import os
 from tkinter.filedialog import askdirectory
 import glob
@@ -9,6 +10,7 @@ import glob
 
 if __name__ == '__main__':
 
+    
     # Initiate settings
     settings = Settings()
     print(settings)
@@ -24,8 +26,12 @@ if __name__ == '__main__':
 
     # Process data
     for xtf_file in xtf_list:
-        track_file = '.'.join(xtf_file.split('.')[:-1]) + '.csv'
-        georef = track_file + '.gsr2'
+        naming = FileNaming(xtf_file)
+        # track_file = '.'.join(xtf_file.split('.')[:-1]) + '.csv'
+        # georef = track_file + '.gsr2'
+        track_file = naming.get_track_WGS_name()
+        georef = naming.get_track_georef_name()
+
         sonar_data = SonarData(xtf_file)
         track = sonar_data.extractTrackWGS84()
         with open(track_file, 'w') as wfile:
