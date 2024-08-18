@@ -12,6 +12,7 @@ class TrackProcess:
         for stripe in sonar_stripes_array:
             self.track.append((stripe.lon, stripe.lat))
         self.calcRotations()
+        self.cable_out = [0] * len(self.track)
 
 
     def smoothRotations(self, window, order):
@@ -42,9 +43,11 @@ class TrackProcess:
         self.rotations = rotations
 
 
-    def updateCableOut(self, cable_out):
+    def updateCableOut(self):
+
         new_track = [None] * len(self.track)
         for i in range(len(self.track)):
+            cable_out = self.cable_out[i]
             # Start from previous ping
             distance = 0.0
             j = 1
@@ -68,9 +71,31 @@ class TrackProcess:
 
     def calcOffsetedPoint(self, pt1, offset):
         # Calculate offset from beginning of track
-        pt0 = ((self.track[0][0] - 0.001), (self.track[0][1] - 0.001))
-        dist1 = ut.calcDistance(pt0, pt1)
-        proportion = dist1 / offset
-        offset_x = (pt1[0] - pt0[0])/proportion + pt0[0]
-        offset_y = (pt1[1] - pt0[1])/proportion + pt0[1]
+        rot = 180 - self.rotations[0] # Back direction
+        offset_x, offset_y = ut.calcDistByRot(pt1, rot, offset)
+        print(f'Calculated offset {(offset_x, offset_y)} based on rotation {rot}')
         return (offset_x, offset_y)
+    
+
+    def inputCableOut(self, cableOutInfo):
+        """
+        Function for  manual input of cable out
+        CableOut info must be array of tuples (ping, cable)
+        where ping is ping number
+        cable is cableout info in corresponding time
+        """
+        if type(cableOutInfo) == int:
+            self.cable_out = [cableOutInfo] * len(self.cable_out)
+            return 0
+        
+        start_ping_no = 0
+        for cur_info in cableOutInfo:
+            ping_no, cableout = cur_info
+            for i in range(start_ping_no, ping_no):
+                self.cable_out[i] = cableout
+            start_ping_no = ping_no
+        # Fill to the end
+        for i in range(start_ping_no, len(self.cable_out)):
+            pass
+
+
