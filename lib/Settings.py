@@ -7,17 +7,19 @@ SETTINGS_FILE = 'settings.cfg'
 class Settings:
 
     def __init__(self):
-        self.keys = ['directory', 'mapscale', 'cableout']
+        self.keys = ['directory', 'mapscale', 'cableout', 'margins']
         self.directory = ''
         self.map_scale = 1.0
         self.cable_out = None
+        self.map_margins = 10 # Margins of map in meters
         self.readfile()
 
 
     def __str__(self):
         return f'{self.keys[0]}:{self.directory}\n' + \
                 f'{self.keys[1]}:{self.map_scale:.1f}\n' + \
-                f'{self.keys[2]}:{self.cable_out}\n'
+                f'{self.keys[2]}:{self.map_margins:.1f}\n' + \
+                f'{self.keys[3]}:{self.map_margins}\n'
 
 
     def readfile(self):
@@ -36,6 +38,9 @@ class Settings:
                         self.cable_out = None
                     else:
                         self.cable_out = cable_out
+                # Margins
+                if self.keys[3] in line:
+                    self.map_margins = int(line.split(':')[1])
 
     def writefile(self):
         if self.cable_out is None:
@@ -47,3 +52,4 @@ class Settings:
             sett_write.write(f'{self.keys[0]}:{self.directory}\n') 
             sett_write.write(f'{self.keys[1]}:{self.map_scale:.1f}\n') 
             sett_write.write(f'{self.keys[2]}:{cable_out:.0f}\n') 
+            sett_write.write(f'{self.keys[3]}:{self.map_margins:.0f}\n') 
