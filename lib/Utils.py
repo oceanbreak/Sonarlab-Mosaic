@@ -35,6 +35,14 @@ def calcRotBtwPoints(pt1, pt2):
     return np.degrees(rot)
 
 
+def calcDistByRot(pt, rot, dist):
+    x0, y0 = pt
+    x = dist * np.sin(np.radians(rot)) + x0
+    y = dist * np.cos(np.radians(rot)) + y0
+    return (x,y)
+
+
+
 def haversine(coord_a, coord_b):
     """
     Calculate the great circle distance between two points
