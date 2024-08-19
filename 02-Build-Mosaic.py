@@ -55,14 +55,14 @@ if __name__ == '__main__':
         
         # Update track rotations
         # track_proc.filterRotations(55)
-        # track_proc.smoothRotations(55, 2)
+        track_proc.smoothRotations(33, 2)
 
         # Cable out
         track_proc.inputCableOut(CABLE_OUT)
         track_proc.updateCableOut()
         
         offseted_track = track_proc.getTrack()
-        track_proc.filterRotations(77)
+        # track_proc.filterRotations(33)
         track_proc.smoothRotations(33,2)
         rotations = track_proc.getTrackRotations()
         print(f'Stripes are {len(sonar_stripes)}, rotations are {len(rotations)}')
