@@ -39,13 +39,20 @@ class PictureViewer:
             self.keyHandler(delay)
 
     def keyHandler(self, delay):
-        resp = cv2.waitKey(delay)
+        if delay != 0:
+            cv2.waitKey(delay)
+            self._is_showed = False
+            return
+        resp = cv2.waitKey()
         if resp & 0xFF == 27:
             self._is_showed = False
-        if chr(resp) in ('w', 'W'):
-            self.plusScale()
-        if chr(resp) in ('s', 'S'):
-            self.reduceScale()
+        try:
+            if chr(resp) in ('w', 'W'):
+                self.plusScale()
+            if chr(resp) in ('s', 'S'):
+                self.reduceScale()
+        except:
+            pass
 
 
     def imsave(self, output_file):
