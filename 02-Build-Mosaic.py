@@ -27,6 +27,8 @@ if __name__ == '__main__':
     TARGET_SCALE = settings.map_scale
     MARGIN = settings.map_margins
     CABLE_OUT = settings.cable_out
+    CORRECTION_WINDOW = settings.corwindow
+    GAMMA = settings.gamma
 
     xtf_list = glob.glob(os.path.join(settings.directory, '*.xtf'))
     print(xtf_list)
@@ -35,7 +37,6 @@ if __name__ == '__main__':
     for xtf_file in xtf_list:
         naming = FileNaming(xtf_file)
         track_GK_file = naming.get_track_GK_name()
-        print(track_GK_file)
         map_file = naming.get_map_name()
         map_georef_file = naming.get_map_georef_name()
 
@@ -46,7 +47,7 @@ if __name__ == '__main__':
             print('Missed files')
             exit(1)
 
-        sonar.gammaCorrect(2)
+        sonar.gammaCorrect(GAMMA)
         sonar.loadGK(track_input)
         sonar_stripes = sonar.splitIntoGKStripes()
 
@@ -54,29 +55,24 @@ if __name__ == '__main__':
         track_proc = TrackProcess(sonar_stripes)
         
         # Update track rotations
-        # track_proc.filterRotations(55)
-        track_proc.smoothRotations(33, 2)
+        # track_proc.smoothRotations(CORRECTION_WINDOW, 2)
 
         # Cable out
         track_proc.inputCableOut(CABLE_OUT)
         track_proc.updateCableOut()
+        track_proc.smoothRotations(CORRECTION_WINDOW, 2)
         
         offseted_track = track_proc.getTrack()
-        # track_proc.filterRotations(33)
-        track_proc.smoothRotations(33,2)
         rotations = track_proc.getTrackRotations()
         print(f'Stripes are {len(sonar_stripes)}, rotations are {len(rotations)}')
 
         # CALCULATE MARGINS
-
-        # sonar_img = SonarImageGK(sonar_stripes[-1], DIST_SCALE).image
         print('Processing track')
         TL_coordsGK = []
         BR_coordsGK = []
         stripe_imgs = []
 
         for stripe, rot, trackpoint in zip(sonar_stripes, rotations, offseted_track):
-            # print(stripe)
             stripe_img = SonarImageGK(stripe, TARGET_SCALE)
             stripe_img.updateCenterGK(trackpoint)
             stripe_img.rotate(rot)
@@ -102,7 +98,7 @@ if __name__ == '__main__':
             mapGK.placeStripeOnCanvas(stripe)
 
         viewer = PictureViewer('Map', mapGK.getImage())
-        viewer.show()
+        viewer.show(10)
 
         margins = mapGK.getMarginMaps()
 
