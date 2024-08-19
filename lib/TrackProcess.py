@@ -50,6 +50,7 @@ class TrackProcess:
     def updateCableOut(self):
 
         new_track = [None] * len(self.track)
+        outlier_track_length = 0
         for i in range(len(self.track)):
             cable_out = self.cable_out[i]
             # Start from previous ping
@@ -62,7 +63,16 @@ class TrackProcess:
             if i-j >= 0:
                 new_track[i] = self.track[i-j]
             else:
-                new_track[i] = self.calcOffsetedPoint(self.track[i], cable_out)
+                outlier_track_length += 1
+                # new_track[i] = self.calcOffsetedPoint(self.track[i], cable_out)
+
+        # Extrapolate track
+        delta_meters = cable_out / outlier_track_length
+        for i in range(outlier_track_length):
+            print(f'delta metres = { (outlier_track_length - i)*delta_meters}')
+            new_track[i] = self.calcOffsetedPoint(self.track[0],
+                                                   (outlier_track_length - i)*delta_meters)
+        
         self.track = new_track
         print(f'Track updated based on cable offset {cable_out} m')
         print('Test for pairs')
