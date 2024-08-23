@@ -16,7 +16,30 @@ class TrackProcess:
 
 
     def smoothRotations(self, window, order):
-        self.rotations = savgol_filter(self.rotations, window, order)
+        # Remove jumps in rotations between 180 and -180
+        one_sign_rotations = [self.rotations[0]]
+        for i in range(1, len(self.rotations)):
+            if np.abs(one_sign_rotations[i-1] - self.rotations[i]) > 180:
+                if one_sign_rotations[i-1] < 0:
+                    one_sign_rotations.append(self.rotations[i] - 360)
+                else:
+                    one_sign_rotations.append(self.rotations[i] + 360)
+            else:
+                one_sign_rotations.append(self.rotations[i])
+
+        rotations_filtered = savgol_filter(one_sign_rotations, window, order)
+
+        # Return jumps back
+        result_rotations = []
+        for rot in rotations_filtered:
+            if rot <= -180:
+                result_rotations.append(rot + 360)
+            elif rot > 180:
+                result_rotations.append(rot - 360)
+            else:
+                result_rotations.append(rot)
+
+        self.rotations = result_rotations
 
     
     def filterRotations(self, window):
