@@ -4,6 +4,8 @@ import numpy as np
 import lib.Utils as ut
 import logging
 import glob
+from matplotlib import pyplot as plt
+import sys
 
 
 class SonarStripe:
@@ -35,6 +37,21 @@ class SonarData:
         second =  self.sonar_packets[ping_no].Second
         hseconds =  self.sonar_packets[ping_no].HSeconds # Hundredths of second
         return np.array((year, month, day, hour, minute, second, hseconds), dtype=np.uint32)
+    
+    
+    def getSonarLine(self, ping_no):
+        if 0 <= ping_no < self.pings_num:
+            l_chan = self.sonar_packets[ping_no].data[0]
+            r_chan = self.sonar_packets[ping_no].data[1]
+            return (l_chan, r_chan)
+        else:
+            return None
+        
+
+    def writeSonarLine(self, ping_no, rgt, lft):
+        if 0 <= ping_no < self.pings_num:
+            self.sonar_packets[ping_no].data[0] = lft
+            self.sonar_packets[ping_no].data[1] = rgt 
 
 
     def getPingCoordinates(self, ping_no):
@@ -136,7 +153,60 @@ class SonarData:
                 prev_lon = lon
         print(f'Created {len(sonar_stripes)} sonar stripes')
         return sonar_stripes
+    
+    
+    def estimateFirstReflection(self, rgt, threshold):
+        # Estimate dirst reflection by right channel
+        refl_arr = rgt[rgt < threshold]
+        return len(refl_arr)
+    
+    
+    def calculateNewDistances(self, rgt, slant_range, fish_height, first_reflection):
+        x0 = np.arange(len(rgt))
+        L = x0[first_reflection:] * slant_range / len(rgt) # array of slant ranges for each reflection
+        H = fish_height
+        return np.sqrt(L*L - H*H)
+    
+    
+    def remapChannel(self, rgt_corrected, new_range):
+        x0 = new_range
+        x1 = np.linspace(0, new_range[-1], len(new_range))
+        y_new = np.interp(x1, x0, rgt_corrected)
+        return y_new
 
+    
+
+    def correctSlantRange(self, threshold = 10):
+        for ping_no in range(len(self.sonar_packets)):
+            sys.stdout.write(f'\rAnalysing {ping_no} of {len(self.sonar_packets)} pings')
+            lft, rgt = self.getSonarLine(ping_no)
+            lft = lft[::-1] # Inverse to work nice
+            first_reflection = self.estimateFirstReflection(rgt, threshold)
+            slant_range = self.sonar_packets[ping_no].ping_chan_headers[0].SlantRange
+            fish_height = slant_range * first_reflection / len(rgt)
+
+            new_ranges = self.calculateNewDistances(rgt, slant_range, fish_height, first_reflection)
+            new_rgt = self.remapChannel(rgt[first_reflection:], new_ranges)
+            new_lft = self.remapChannel(lft[first_reflection:], new_ranges)
+            new_lft = new_lft[::-1] # Inverse back
+            new_slant_range = new_ranges[-1]
+            # plt.plot(old_ranges, rgt, label='Raw')
+            # plt.plot(new_ranges, rgt[first_reflection:], label='Corrected')
+            # plt.show()
+            # new_slant_range = new_ranges[-1]
+            # plt.plot(new_ranges)
+            # plt.plot(np.arange(len(rgt)) * slant_range  / len(rgt))
+
+            # Update slant ranges
+            self.sonar_packets[ping_no].ping_chan_headers[0].NumSamples = len(new_ranges)
+            self.sonar_packets[ping_no].ping_chan_headers[1].NumSamples = len(new_ranges)
+
+            self.sonar_packets[ping_no].ping_chan_headers[0].SlantRange = new_slant_range
+            self.sonar_packets[ping_no].ping_chan_headers[1].SlantRange = new_slant_range
+            self.writeSonarLine(ping_no, new_rgt, new_lft)
+        self.generateFullImage()
+
+            
 
 
     def generateFullImage(self):
