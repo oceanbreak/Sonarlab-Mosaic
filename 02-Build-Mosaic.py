@@ -30,6 +30,7 @@ if __name__ == '__main__':
     CABLE_OUT = settings.cable_out
     CORRECTION_WINDOW = settings.corwindow
     GAMMA = settings.gamma
+    SLANT_THRESHOLD = settings.slantthreshold
 
     xtf_list = glob.glob(os.path.join(settings.directory, '*.xtf'))
     print(xtf_list)
@@ -49,7 +50,7 @@ if __name__ == '__main__':
             exit(1)
 
         
-        sonar.correctSlantRange(threshold=4)
+        sonar.correctSlantRange(threshold=SLANT_THRESHOLD)
         sonar.gammaCorrect(GAMMA)
         sonar.loadGK(track_input)
         sonar_stripes = sonar.splitIntoGKStripes()
