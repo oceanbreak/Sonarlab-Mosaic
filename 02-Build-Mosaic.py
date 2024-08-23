@@ -12,6 +12,7 @@ import os
 import cv2
 from tkinter.filedialog import askdirectory
 from skimage import io
+from matplotlib import pyplot as plt
 
 
 if __name__ == '__main__':
@@ -47,20 +48,30 @@ if __name__ == '__main__':
             print('Missed files')
             exit(1)
 
+        
+        sonar.correctSlantRange(threshold=4)
         sonar.gammaCorrect(GAMMA)
         sonar.loadGK(track_input)
         sonar_stripes = sonar.splitIntoGKStripes()
 
         # Get rotations
         track_proc = TrackProcess(sonar_stripes)
+
+        # plt.plot(track_proc.getTrackRotations(), label='Raw')
+
         
         # Update track rotations
-        # track_proc.smoothRotations(CORRECTION_WINDOW, 2)
+        track_proc.smoothRotations(CORRECTION_WINDOW, 2)
+        # plt.plot(track_proc.getTrackRotations(), label='Pre-smoothed')
 
         # Cable out
         track_proc.inputCableOut(CABLE_OUT)
         track_proc.updateCableOut()
         track_proc.smoothRotations(CORRECTION_WINDOW, 2)
+        # plt.plot(track_proc.getTrackRotations(), label='Smoothed after cableout')
+
+        # plt.legend()
+        # plt.show()
         
         offseted_track = track_proc.getTrack()
         rotations = track_proc.getTrackRotations()
