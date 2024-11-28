@@ -171,7 +171,7 @@ class MapDrawer:
         out = np.zeros((self.canvas.shape[0], self.canvas.shape[1], 4))
         out[:,:,:3] = self.canvas
         out[:,:,3] = self.alpha[:,:,0]
-        return out
+        return out.astype(np.uint8)
 
     def getMarginMaps(self):
         # Order: TopLeft, BotLeft, BotRight, TopRight
