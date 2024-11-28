@@ -155,10 +155,11 @@ class SonarData:
         return sonar_stripes
     
     
-    def estimateFirstReflection(self, rgt, threshold):
+    def estimateFirstReflection(self, rgt, threshold, start_refl):
         # Estimate dirst reflection by right channel
-        refl_arr = rgt[rgt < threshold]
-        return len(refl_arr)
+        refl_start_refl = rgt[start_refl:]
+        refl_arr = refl_start_refl[refl_start_refl < threshold]
+        return len(refl_arr) + start_refl
     
     
     def calculateNewDistances(self, rgt, slant_range, fish_height, first_reflection):
@@ -173,37 +174,39 @@ class SonarData:
         x1 = np.linspace(0, new_range[-1], len(new_range))
         y_new = np.interp(x1, x0, rgt_corrected)
         return y_new
-
     
 
-    def correctSlantRange(self, threshold = 10):
+    def correctSlantRange(self, threshold = 10, startrefl=0):
         for ping_no in range(len(self.sonar_packets)):
             sys.stdout.write(f'\rAnalysing {ping_no} of {len(self.sonar_packets)} pings')
             lft, rgt = self.getSonarLine(ping_no)
-            lft = lft[::-1] # Inverse to work nice
-            first_reflection = self.estimateFirstReflection(rgt, threshold)
             slant_range = self.sonar_packets[ping_no].ping_chan_headers[0].SlantRange
+            lft = lft[::-1] # Inverse to work nice
+            startrefl_pixels = int(startrefl * len(rgt) / slant_range )
+            # print(f'start reflection: {startrefl_pixels}')
+            first_reflection = self.estimateFirstReflection(rgt, threshold, startrefl_pixels)
             fish_height = slant_range * first_reflection / len(rgt)
 
             new_ranges = self.calculateNewDistances(rgt, slant_range, fish_height, first_reflection)
-            new_rgt = self.remapChannel(rgt[first_reflection:], new_ranges)
-            new_lft = self.remapChannel(lft[first_reflection:], new_ranges)
-            new_lft = new_lft[::-1] # Inverse back
-            new_slant_range = new_ranges[-1]
-            # plt.plot(old_ranges, rgt, label='Raw')
-            # plt.plot(new_ranges, rgt[first_reflection:], label='Corrected')
-            # plt.show()
-            # new_slant_range = new_ranges[-1]
-            # plt.plot(new_ranges)
-            # plt.plot(np.arange(len(rgt)) * slant_range  / len(rgt))
+            if len(new_ranges) > 100:
+                new_rgt = self.remapChannel(rgt[first_reflection:], new_ranges)
+                new_lft = self.remapChannel(lft[first_reflection:], new_ranges)
+                new_lft = new_lft[::-1] # Inverse back
+                new_slant_range = new_ranges[-1]
+                # plt.plot(old_ranges, rgt, label='Raw')
+                # plt.plot(new_ranges, rgt[first_reflection:], label='Corrected')
+                # plt.show()
+                # new_slant_range = new_ranges[-1]
+                # plt.plot(new_ranges)
+                # plt.plot(np.arange(len(rgt)) * slant_range  / len(rgt))
 
-            # Update slant ranges
-            self.sonar_packets[ping_no].ping_chan_headers[0].NumSamples = len(new_ranges)
-            self.sonar_packets[ping_no].ping_chan_headers[1].NumSamples = len(new_ranges)
+                # Update slant ranges
+                self.sonar_packets[ping_no].ping_chan_headers[0].NumSamples = len(new_ranges)
+                self.sonar_packets[ping_no].ping_chan_headers[1].NumSamples = len(new_ranges)
 
-            self.sonar_packets[ping_no].ping_chan_headers[0].SlantRange = new_slant_range
-            self.sonar_packets[ping_no].ping_chan_headers[1].SlantRange = new_slant_range
-            self.writeSonarLine(ping_no, new_rgt, new_lft)
+                self.sonar_packets[ping_no].ping_chan_headers[0].SlantRange = new_slant_range
+                self.sonar_packets[ping_no].ping_chan_headers[1].SlantRange = new_slant_range
+                self.writeSonarLine(ping_no, new_rgt, new_lft)
         self.generateFullImage()
 
             
