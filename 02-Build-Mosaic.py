@@ -31,6 +31,8 @@ if __name__ == '__main__':
     CORRECTION_WINDOW = settings.corwindow
     GAMMA = settings.gamma
     SLANT_THRESHOLD = settings.slantthreshold
+    FIRST_REFLECTION = settings.startsearchbottom
+    print(FIRST_REFLECTION)
 
     xtf_list = glob.glob(os.path.join(settings.directory, '*.xtf'))
     print(xtf_list)
@@ -50,7 +52,7 @@ if __name__ == '__main__':
             exit(1)
 
         
-        sonar.correctSlantRange(threshold=SLANT_THRESHOLD)
+        sonar.correctSlantRange(threshold=SLANT_THRESHOLD, startrefl=FIRST_REFLECTION)
         sonar.gammaCorrect(GAMMA)
         sonar.loadGK(track_input)
         sonar_stripes = sonar.splitIntoGKStripes()
