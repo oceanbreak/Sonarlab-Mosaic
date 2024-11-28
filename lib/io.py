@@ -50,6 +50,8 @@ def loadCsvGK(in_name : str, delimeter=';') -> np.ndarray:
     with open(in_name, 'r') as f_read:
         for line in f_read:
             line = line.strip()
+            # Replace , with .
+            line = '.'.join(line.split(','))
             in_x, in_y = line.split(delimeter)
             x.append(float(in_x))
             y.append(float(in_y))
