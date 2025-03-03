@@ -57,8 +57,8 @@ class SonarImageGK:
         new_size_x = sizeXM * dst_scale
         new_size_y = sizeYM * dst_scale
         # Add thickness to avoid white
-        if new_size_y < dst_scale * 4: new_size_y = int(dst_scale * 4) + 5 
-        if new_size_x < dst_scale * 4: new_size_y = int(dst_scale * 4) + 5
+        if new_size_y < dst_scale * 2: new_size_y = int(dst_scale * 2) #+ 5 
+        if new_size_x < dst_scale * 2: new_size_y = int(dst_scale * 2) #+ 5
         return (int(new_size_x), int(new_size_y))
 
 
