@@ -20,8 +20,7 @@ if __name__ == '__main__':
     print(settings)
 
     # Load XTF files
-    xtf_list = glob.glob(os.path.join(settings.directory, '*.xtf')) + \
-                glob.glob(os.path.join(settings.directory, '*.XTF'))
+    xtf_list = glob.glob(os.path.join(settings.directory, '*.xtf'))
     print(xtf_list)
 
     # Process data
