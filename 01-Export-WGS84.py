@@ -2,6 +2,7 @@ from lib.Settings import Settings
 from lib.SonarData import SonarData
 from lib.Georef import Georef
 from lib.io import FileNaming
+from lib.GausKruger import GausKruger
 import os
 from tkinter.filedialog import askdirectory
 import glob
@@ -20,8 +21,7 @@ if __name__ == '__main__':
     print(settings)
 
     # Load XTF files
-    xtf_list = glob.glob(os.path.join(settings.directory, '*.xtf')) + \
-                glob.glob(os.path.join(settings.directory, '*.XTF'))
+    xtf_list = glob.glob(os.path.join(settings.directory, '*.xtf'))
     print(xtf_list)
 
     # Process data
@@ -30,6 +30,7 @@ if __name__ == '__main__':
         # track_file = '.'.join(xtf_file.split('.')[:-1]) + '.csv'
         # georef = track_file + '.gsr2'
         track_file = naming.get_track_WGS_name()
+        track_GK_file = naming.get_track_GK_name()
         georef = naming.get_track_georef_name()
 
         sonar_data = SonarData(xtf_file)
@@ -40,5 +41,14 @@ if __name__ == '__main__':
         print(f'Writing file {track_file} done')
         gr = Georef()
         gr.makeSurferGeorefWGS84(georef)
+
+        # Gauss Kruger
+        GK = GausKruger()
+        with open(track_GK_file, 'w') as wfile:
+            for line in track:
+                lon, lat = line
+                x, y, zone = GK.transform_to_gauss_kruger(lat, lon, 12)
+                wfile.write(f'{x};{y}\n')
+        print(f'Writing file {track_file} done')
 
     
