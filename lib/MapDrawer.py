@@ -172,6 +172,13 @@ class MapDrawer:
         out[:,:,:3] = self.canvas
         out[:,:,3] = self.alpha[:,:,0]
         return out.astype(np.uint8)
+    
+    def getCornersGK(self):
+        # Get GK coordinates in orderL: Left, Right, Bottom, Top
+        return np.array([self.XminGK, self.XmaxGK, self.YminGK, self.YmaxGK])
+    
+    def getImgSize(self):
+        return self.canvas.shape[:2]
 
     def getMarginMaps(self):
         # Order: TopLeft, BotLeft, BotRight, TopRight

@@ -21,6 +21,9 @@ class FileNaming:
     def get_map_name(self):
         return '.'.join(self.xtf_file_name.split('.')[:-1]) + '_mosaic.png'
     
+    def get_geotiff_name(self):
+        return '.'.join(self.xtf_file_name.split('.')[:-1]) + '_mosaic.tif'
+    
     def get_map_georef_name(self):
         return self.get_map_name() + '.georef'
     

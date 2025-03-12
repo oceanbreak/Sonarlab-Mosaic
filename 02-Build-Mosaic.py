@@ -13,6 +13,8 @@ import cv2
 from tkinter.filedialog import askdirectory
 from skimage import io
 from matplotlib import pyplot as plt
+import rasterio
+from rasterio.transform import from_origin
 
 
 if __name__ == '__main__':
@@ -42,6 +44,7 @@ if __name__ == '__main__':
         naming = FileNaming(xtf_file)
         track_GK_file = naming.get_track_GK_name()
         map_file = naming.get_map_name()
+        geotiff_file = naming.get_geotiff_name()
         map_georef_file = naming.get_map_georef_name()
 
         try:
@@ -117,10 +120,46 @@ if __name__ == '__main__':
         margins = mapGK.getMarginMaps()
 
         # cv2.imwrite(map_file, mapGK.getTransparent())
-        io.imsave(map_file, mapGK.getTransparent())
-        print(f'Saved image {map_file}')
-        ref = Georef()
-        ref.make(map_georef_file, margins)
+        # io.imsave(map_file, mapGK.getTransparent())
+        # print(f'Saved image {map_file}')
+        # ref = Georef()
+        # ref.make(map_georef_file, margins)
+
+        ### Save GeoTiff
+        # Define the coordinates of the corners in the Pulkovo coordinate system
+        # Example: (left, bottom, right, top)
+
+        left, right, bottom, top = mapGK.getCornersGK()
+
+
+
+        # Define the image dimensions (width, height)
+        height, width = mapGK.getImgSize()
+
+
+        # Calculate the transform (affine transformation matrix)
+        transform = from_origin(left, bottom, (right - left) / width, (bottom - top) / height)
+        image0 = mapGK.getTransparent()
+        # MOVE CHANNEL AXES (RGB) to the beginning
+        image = np.moveaxis(image0.squeeze(),-1,0)
+
+        # Write the GeoTIFF file
+        with rasterio.open(
+            geotiff_file,
+            'w',
+            driver='GTiff',
+            height=height,
+            width=width,
+            count=4,  # Number of bands
+            dtype=image.dtype,
+            crs='EPSG:28412',  # Pulkovo 1942 coordinate system (example, adjust as needed)
+            transform=transform
+        ) as dst:
+            print(type(dst))
+            dst.write(image)  # Write the image data to the first band
+
+        print(f"GeoTIFF file saved as {geotiff_file}")
+
 
         
 
