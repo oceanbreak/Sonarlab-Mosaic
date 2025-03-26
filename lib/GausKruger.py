@@ -12,7 +12,7 @@ class GausKruger:
     def transform_to_gauss_kruger(self, latitude, longitude, zone=None):
         """Transform geographical coordinates to Gauss-Kruger (Pulkovo) projection."""
         if zone is None:
-            zone = self.gauss_kruger_zone(longitude)
+            zone = self.gauss_kruger_zone(longitude[0])
         # Define the EPSG code for the Gauss-Kruger zone
         epsg_code = 28400 + zone
         # Create a transformer object

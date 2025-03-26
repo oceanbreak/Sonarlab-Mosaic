@@ -67,7 +67,7 @@ if __name__ == '__main__':
         with open(track_GK_file, 'w') as wfile:
             lon = track[:,0]
             lat = track[:,1]
-            GK_X, GK_Y, GK_zone = GK.transform_to_gauss_kruger(lat, lon, 12)
+            GK_X, GK_Y, GK_zone = GK.transform_to_gauss_kruger(lat, lon)
             for x, y in zip(GK_X, GK_Y):
                 wfile.write(f'{x};{y}\n')
         print(f'Writing file {track_file} done')
