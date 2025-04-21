@@ -1,31 +1,34 @@
+from lib.Settings import Settings
+from lib.SonarData import SonarData
+from lib.Georef import Georef
+from lib.io import FileNaming
+from lib.GausKruger import GausKruger
+from tkinter.filedialog import askdirectory
 from lib.MapDrawer import MapDrawer, SonarImageGK
 from lib.PictureViewer import PictureViewer
 from lib.io import loadCsvGK, npToCsv
-from lib.Georef import Georef
-from lib.SonarData import SonarData
 from lib.TrackProcess import TrackProcess
-from lib.Settings import Settings
-from lib.io import FileNaming
 import numpy as np
 import glob
 import os
 import cv2
-from tkinter.filedialog import askdirectory
 from skimage import io
 from matplotlib import pyplot as plt
 import rasterio
 from rasterio.transform import from_origin
 
 
+
 if __name__ == '__main__':
 
+    
     # Initiate settings
     settings = Settings()
     print(settings)
     path = askdirectory(initialdir=settings.directory)
     settings.directory = path
     settings.writefile()
-    print(settings)
+
 
     TARGET_SCALE = settings.map_scale
     MARGIN = settings.map_margins
@@ -34,12 +37,42 @@ if __name__ == '__main__':
     GAMMA = settings.gamma
     SLANT_THRESHOLD = settings.slantthreshold
     FIRST_REFLECTION = settings.startsearchbottom
-    print(FIRST_REFLECTION)
+    STRIPE_SCALE = settings.stripescale
+    
 
+    # Load XTF files
     xtf_list = glob.glob(os.path.join(settings.directory, '*.xtf'))
     print(xtf_list)
 
-    # Generate maps
+    # Process data
+    for xtf_file in xtf_list:
+        naming = FileNaming(xtf_file)
+        # track_file = '.'.join(xtf_file.split('.')[:-1]) + '.csv'
+        # georef = track_file + '.gsr2'
+        track_file = naming.get_track_WGS_name()
+        track_GK_file = naming.get_track_GK_name()
+        georef = naming.get_track_georef_name()
+
+        sonar_data = SonarData(xtf_file)
+        track = sonar_data.extractTrackWGS84()
+        with open(track_file, 'w') as wfile:
+            for line in track:
+                wfile.write(f'{line[0]};{line[1]}\n')
+        print(f'Writing file {track_file} done')
+        gr = Georef()
+        gr.makeSurferGeorefWGS84(georef)
+
+        # Gauss Kruger
+        GK = GausKruger()
+        with open(track_GK_file, 'w') as wfile:
+            lon = track[:,0]
+            lat = track[:,1]
+            GK_X, GK_Y, GK_zone = GK.transform_to_gauss_kruger(lat, lon)
+            for x, y in zip(GK_X, GK_Y):
+                wfile.write(f'{x};{y}\n')
+        print(f'Writing file {track_file} done')
+
+# Generate maps
     for xtf_file in xtf_list:
         naming = FileNaming(xtf_file)
         track_GK_file = naming.get_track_GK_name()
@@ -90,7 +123,7 @@ if __name__ == '__main__':
         stripe_imgs = []
 
         for stripe, rot, trackpoint in zip(sonar_stripes, rotations, offseted_track):
-            stripe_img = SonarImageGK(stripe, TARGET_SCALE)
+            stripe_img = SonarImageGK(stripe, TARGET_SCALE, STRIPE_SCALE)
             stripe_img.updateCenterGK(trackpoint)
             stripe_img.rotate(rot)
             TL_coordsGK.append(stripe_img.getGKcoordTopLeft())
@@ -138,7 +171,7 @@ if __name__ == '__main__':
 
 
         # Calculate the transform (affine transformation matrix)
-        transform = from_origin(left, bottom, (right - left) / width, (bottom - top) / height)
+        transform = from_origin(left, top, (right - left) / width, (top - bottom) / height)
         image0 = mapGK.getTransparent()
         # MOVE CHANNEL AXES (RGB) to the beginning
         image = np.moveaxis(image0.squeeze(),-1,0)
@@ -152,7 +185,7 @@ if __name__ == '__main__':
             width=width,
             count=4,  # Number of bands
             dtype=image.dtype,
-            crs='EPSG:28412',  # Pulkovo 1942 coordinate system (example, adjust as needed)
+            crs=f'EPSG:{28400 + GK_zone}',  # Pulkovo 1942 coordinate system (example, adjust as needed)
             transform=transform
         ) as dst:
             print(type(dst))

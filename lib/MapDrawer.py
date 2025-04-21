@@ -16,11 +16,11 @@ class SonarImageGK:
     Class that holds image with precalculated parameters
     """
 
-    def __init__(self, img : SonarStripe, dst_scale : float):
+    def __init__(self, img : SonarStripe, dst_scale : float, stripe_scale_coeff : int):
 
         # Calc new size
         self.scale = dst_scale
-        new_size = self.equalScale(img.widthM, img.heightM, dst_scale)
+        new_size = self.equalScale(img.widthM, img.heightM, dst_scale, stripe_scale_coeff)
         self.image = cv2.resize(img.image, new_size)
         # Convert to BGR
         self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
@@ -53,12 +53,12 @@ class SonarImageGK:
         return (BRx, BRy)
 
 
-    def equalScale(self, sizeXM, sizeYM, dst_scale):
+    def equalScale(self, sizeXM, sizeYM, dst_scale, stripe_scale_coeff):
         new_size_x = sizeXM * dst_scale
         new_size_y = sizeYM * dst_scale
         # Add thickness to avoid white
-        if new_size_y < dst_scale * 2: new_size_y = int(dst_scale * 2) #+ 5 
-        if new_size_x < dst_scale * 2: new_size_y = int(dst_scale * 2) #+ 5
+        if new_size_y < dst_scale * stripe_scale_coeff: new_size_y = int(dst_scale * stripe_scale_coeff) #+ 5 
+        if new_size_x < dst_scale * stripe_scale_coeff: new_size_y = int(dst_scale * stripe_scale_coeff) #+ 5
         return (int(new_size_x), int(new_size_y))
 
 
@@ -172,6 +172,13 @@ class MapDrawer:
         out[:,:,:3] = self.canvas
         out[:,:,3] = self.alpha[:,:,0]
         return out.astype(np.uint8)
+    
+    def getCornersGK(self):
+        # Get GK coordinates in orderL: Left, Right, Bottom, Top
+        return np.array([self.XminGK, self.XmaxGK, self.YminGK, self.YmaxGK])
+    
+    def getImgSize(self):
+        return self.canvas.shape[:2]
 
     def getMarginMaps(self):
         # Order: TopLeft, BotLeft, BotRight, TopRight
