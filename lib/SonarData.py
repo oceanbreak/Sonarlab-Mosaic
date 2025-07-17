@@ -6,6 +6,8 @@ import logging
 import glob
 from matplotlib import pyplot as plt
 import sys
+from scipy.signal import medfilt
+from scipy.ndimage import gaussian_filter1d
 
 
 class SonarStripe:
@@ -177,14 +179,14 @@ class SonarData:
     
 
     def correctSlantRange(self, threshold = 10, startrefl=0):
+        first_reflections_raw = self.calculateFirstReflections(threshold, startrefl)
+        first_reflections = self.filterFirstReflections(first_reflections_raw)
         for ping_no in range(len(self.sonar_packets)):
-            sys.stdout.write(f'\rAnalysing {ping_no} of {len(self.sonar_packets)} pings')
             lft, rgt = self.getSonarLine(ping_no)
             slant_range = self.sonar_packets[ping_no].ping_chan_headers[0].SlantRange
             lft = lft[::-1] # Inverse to work nice
-            startrefl_pixels = int(startrefl * len(rgt) / slant_range )
-            # print(f'start reflection: {startrefl_pixels}')
-            first_reflection = self.estimateFirstReflection(rgt, threshold, startrefl_pixels)
+
+            first_reflection = first_reflections[ping_no]
             fish_height = slant_range * first_reflection / len(rgt)
 
             new_ranges = self.calculateNewDistances(rgt, slant_range, fish_height, first_reflection)
@@ -210,6 +212,28 @@ class SonarData:
         self.generateFullImage()
 
             
+    def calculateFirstReflections(self, threshold = 10, startrefl = 0, delta=0):
+        first_reflections = []
+        for ping_no in range(len(self.sonar_packets)):
+            sys.stdout.write(f'\rAnalysing {ping_no} of {len(self.sonar_packets)} pings')
+            _, rgt = self.getSonarLine(ping_no)
+            slant_range = self.sonar_packets[ping_no].ping_chan_headers[0].SlantRange
+            startrefl_pixels = int(startrefl * len(rgt) / slant_range )
+            # print(f'start reflection: {startrefl_pixels}')
+            first_reflection = self.estimateFirstReflection(rgt, threshold, startrefl_pixels)
+            first_reflections.append(first_reflection - delta)
+        print('First reflections calculated')
+        return first_reflections
+    
+    
+    def filterFirstReflections(self, first_reflections, med_window = 9, sigma = 31):
+        # Median filtering outliers
+        new_refl = medfilt(first_reflections, med_window)
+        # Gaussian filtering
+        new_refl = gaussian_filter1d(new_refl, sigma)
+        return new_refl
+
+
 
 
     def generateFullImage(self):
