@@ -166,22 +166,24 @@ class SonarData:
     
     def _estimateFirstReflection2(self, rgt, threshold, start_refl):
         # Remove last element because yellowfin has strange drop of data there
-        rgt_log = np.log(rgt + 0.001).astype(np.float32)[:-10] 
+        rgt_log = np.log(rgt[start_refl:] + 0.001).astype(np.float32)[:-10] 
         # rgt_log = rgt
 
-        rgt_fltrd = medfilt(rgt_log, 7)
+        rgt_fltrd = medfilt(rgt_log, 37)
+        # moving avertage
+        # rgt_fltrd = np.convolve(rgt_log, np.ones(20)/20, mode='valid')
         # plt.plot(rgt_fltrd)
         # plt.show()
         min_val = np.min(rgt_fltrd)
         start_search = np.where(rgt_fltrd == min_val)[0][0] # first entry of minimum value
-        print(f'Search start from {start_search}')
+        # print(f'Search start from {start_search}')
         index = start_search
         signal_value = -9999
         while signal_value < min_val + threshold:
             index += 1
             signal_value = rgt_fltrd[index]
 
-        return index, rgt_fltrd
+        return index + start_refl, rgt_fltrd
 
 
     
@@ -200,17 +202,21 @@ class SonarData:
         return y_new
     
 
-    def correctSlantRange(self, threshold = 10, startrefl=0):
+    def correctSlantRange(self, threshold = 10, startrefl=0, debug=False):
 
-        # Prepare output img
-        slant_corr_img = np.zeros((len(self.sonar_packets), len(self.getSonarLine(0)[1]))).astype(np.uint8)
-        resize_sc_img = ut.ratioPreservedResize(slant_corr_img, (0,1000))
-        cv2.imshow('Estimate reflection', resize_sc_img)
-        cv2.waitKey(10)
+
+        if debug:
+            fig, ax = plt.subplots(2, 1)
+            plt.show(block=False)
+
+
+            # Prepare output img
+            slant_corr_img = np.zeros((len(self.sonar_packets), len(self.getSonarLine(0)[1]), 3)).astype(np.uint8)
+            resize_sc_img = ut.ratioPreservedResize(slant_corr_img, (0,1000))
+            cv2.imshow('Estimate reflection', resize_sc_img)
+            cv2.waitKey(1)
+
         prev_first_reflection = 0
-
-        fig, ax = plt.subplots()
-        plt.show(block=False)
 
         for ping_no in range(len(self.sonar_packets)):
             sys.stdout.write(f'\rAnalysing {ping_no} of {len(self.sonar_packets)} pings')
@@ -221,22 +227,26 @@ class SonarData:
             # print(f'start reflection: {startrefl_pixels}')
             try:
                 first_reflection, plot_data = self._estimateFirstReflection2(rgt, threshold, startrefl_pixels)
-                ax.clear()
-                ax.plot(plot_data)
-                ax.set_title(f'Ping {ping_no}')
-                plt.draw()
-                plt.pause(0.01)
+
+                if debug:
+                    ax[0].clear()
+                    ax[0].plot(plot_data)
+                    ax[0].axvline(x=first_reflection, color='red')
+                    ax[0].set_title(f'Ping {ping_no}: log signal')
+                    plt.draw()
+                    plt.pause(0.001)
             except IndexError:
                 first_reflection = prev_first_reflection
             prev_first_reflection = first_reflection
             fish_height = slant_range * first_reflection / len(rgt)
 
-            # Update output_img
-            slant_corr_img[ping_no, :] = rgt
-            cv2.circle(slant_corr_img, [first_reflection, ping_no], 10, [255,255,255])
-            resize_sc_img = ut.ratioPreservedResize(slant_corr_img, (0,1000))
-            cv2.imshow('Estimate reflection', resize_sc_img)
-            cv2.waitKey(10)
+            if debug:
+                # Update output_img
+                for i in range(3): slant_corr_img[ping_no, :, i] = rgt
+                cv2.circle(slant_corr_img, [first_reflection, ping_no], 3, [0,0,255])
+                resize_sc_img = ut.ratioPreservedResize(slant_corr_img, (0,1000))
+                cv2.imshow('Estimate reflection', resize_sc_img)
+                cv2.waitKey(1)
 
             new_ranges = self.calculateNewDistances(rgt, slant_range, fish_height, first_reflection)
             if len(new_ranges) > 100:
@@ -244,12 +254,15 @@ class SonarData:
                 new_lft = self.remapChannel(lft[first_reflection:], new_ranges)
                 new_lft = new_lft[::-1] # Inverse back
                 new_slant_range = new_ranges[-1]
-                # plt.plot(old_ranges, rgt, label='Raw')
-                # plt.plot(new_ranges, rgt[first_reflection:], label='Corrected')
-                # plt.show()
-                # new_slant_range = new_ranges[-1]
-                # plt.plot(new_ranges)
-                # plt.plot(np.arange(len(rgt)) * slant_range  / len(rgt))
+                if debug:
+                    # ax[1].plot(old_ranges, rgt, label='Raw')
+                    # ax[1].plot(new_ranges, rgt[first_reflection:], label='Corrected')
+                    # plt.draw()
+                    # new_slant_range = new_ranges[-1]
+                    ax[1].clear()
+                    ax[1].plot(new_rgt)
+                    ax[1].set_title('Updated signal')
+                    plt.draw()
 
                 # Update slant ranges
                 self.sonar_packets[ping_no].ping_chan_headers[0].NumSamples = len(new_ranges)
