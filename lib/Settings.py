@@ -8,7 +8,8 @@ class Settings:
 
     def __init__(self):
         self.keys = ['directory', 'mapscale', 'cableout', 'margins',
-                     'gamma', 'corwindow', 'slantthreshold', 'startsearchbottom', 'stripescale']
+                     'gamma', 'corwindow', 'slantthreshold', 'startsearchbottom', 'stripescale',
+                     'debug']
         self.directory = ''
         self.map_scale = 1.0
         self.cable_out = None
@@ -18,6 +19,7 @@ class Settings:
         self.slantthreshold = 0
         self.startsearchbottom = 0
         self.stripescale = 1
+        self.debug=False
         self.readfile()
 
 
@@ -30,7 +32,8 @@ class Settings:
                 f'{self.keys[5]}:{self.corwindow}\n' + \
                 f'{self.keys[6]}:{self.slantthreshold}\n' + \
                 f'{self.keys[7]}:{self.startsearchbottom}\n' + \
-                f'{self.keys[8]}:{self.stripescale}\n'
+                f'{self.keys[8]}:{self.stripescale}\n' + \
+                f'{self.keys[9]}:{self.debug}\n'
 
 
     def readfile(self):
@@ -68,6 +71,9 @@ class Settings:
                 # Stripe scale
                 if self.keys[8] in line:
                     self.stripescale = int(line.split(':')[1])
+                                    # Stripe scale
+                if self.keys[9] in line:
+                    self.debug = int(line.split(':')[1])
 
     def writefile(self):
         if self.cable_out is None:
@@ -85,3 +91,4 @@ class Settings:
             sett_write.write(f'{self.keys[6]}:{self.slantthreshold:.0f}\n')
             sett_write.write(f'{self.keys[7]}:{self.startsearchbottom:.0f}\n')
             sett_write.write(f'{self.keys[8]}:{self.stripescale:.0f}\n')
+            sett_write.write(f'{self.keys[9]}:{self.debug:.0f}\n')

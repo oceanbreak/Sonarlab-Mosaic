@@ -38,6 +38,7 @@ if __name__ == '__main__':
     SLANT_THRESHOLD = settings.slantthreshold
     FIRST_REFLECTION = settings.startsearchbottom
     STRIPE_SCALE = settings.stripescale
+    DEBUG = settings.debug
     
 
     # Load XTF files
@@ -81,6 +82,7 @@ if __name__ == '__main__':
         map_georef_file = naming.get_map_georef_name()
 
         try:
+
             track_input = loadCsvGK(track_GK_file)
             sonar = SonarData(xtf_file)
         except FileNotFoundError:
@@ -88,7 +90,7 @@ if __name__ == '__main__':
             exit(1)
 
         
-        sonar.correctSlantRange(threshold=SLANT_THRESHOLD, startrefl=FIRST_REFLECTION, debug=False)
+        sonar.correctSlantRange(threshold=SLANT_THRESHOLD, startrefl=FIRST_REFLECTION, debug=DEBUG)
         sonar.gammaCorrect(GAMMA)
         sonar.loadGK(track_input)
         sonar_stripes = sonar.splitIntoGKStripes()
