@@ -9,7 +9,7 @@ class Settings:
     def __init__(self):
         self.keys = ['directory', 'mapscale', 'cableout', 'margins',
                      'gamma', 'corwindow', 'slantthreshold', 'startsearchbottom', 'stripescale',
-                     'debug']
+                     'debug', 'correct_slantrange', 'corsltrg_searchwindow', 'corcltrg_frst_refl_bias']
         self.directory = ''
         self.map_scale = 1.0
         self.cable_out = None
@@ -20,6 +20,9 @@ class Settings:
         self.startsearchbottom = 0
         self.stripescale = 1
         self.debug=False
+        self.correct_slantrange = False
+        self.corsltrng_searchwindow = 51
+        self.corsltrng_frst_refl_bias = 0
         self.readfile()
 
 
@@ -33,7 +36,10 @@ class Settings:
                 f'{self.keys[6]}:{self.slantthreshold}\n' + \
                 f'{self.keys[7]}:{self.startsearchbottom}\n' + \
                 f'{self.keys[8]}:{self.stripescale}\n' + \
-                f'{self.keys[9]}:{self.debug}\n'
+                f'{self.keys[9]}:{self.debug}\n' + \
+                f'{self.keys[10]}:{self.correct_slantrange}\n' + \
+                f'{self.keys[11]}:{self.corsltrng_searchwindow}\n' + \
+                f'{self.keys[12]}:{self.corsltrng_frst_refl_bias}\n'
 
 
     def readfile(self):
@@ -75,6 +81,13 @@ class Settings:
                 if self.keys[9] in line:
                     self.debug = int(line.split(':')[1])
 
+                if self.keys[10] in line:
+                    self.correct_slantrange = int(line.split(':')[1])
+                if self.keys[11] in line:
+                    self.corsltrng_searchwindow = int(line.split(':')[1])
+                if self.keys[12] in line:
+                    self.corsltrng_frst_refl_bias = int(line.split(':')[1])
+
     def writefile(self):
         if self.cable_out is None:
             cable_out = -1
@@ -92,3 +105,6 @@ class Settings:
             sett_write.write(f'{self.keys[7]}:{self.startsearchbottom:.0f}\n')
             sett_write.write(f'{self.keys[8]}:{self.stripescale:.0f}\n')
             sett_write.write(f'{self.keys[9]}:{self.debug:.0f}\n')
+            sett_write.write(f'{self.keys[10]}:{self.correct_slantrange:.0f}\n')
+            sett_write.write(f'{self.keys[11]}:{self.corsltrng_searchwindow:.0f}\n')
+            sett_write.write(f'{self.keys[12]}:{self.corsltrng_frst_refl_bias:.0f}\n')
