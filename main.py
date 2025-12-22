@@ -39,6 +39,9 @@ if __name__ == '__main__':
     FIRST_REFLECTION = settings.startsearchbottom
     STRIPE_SCALE = settings.stripescale
     DEBUG = settings.debug
+    CORRECT_SR = settings.correct_slantrange
+    CSR_WINDOW = settings.corsltrng_searchwindow
+    CSR_BIAS = settings.corsltrng_frst_refl_bias
     
 
     # Load XTF files
@@ -89,8 +92,8 @@ if __name__ == '__main__':
             print('Missed files')
             exit(1)
 
-        
-        sonar.correctSlantRange(threshold=SLANT_THRESHOLD, startrefl=FIRST_REFLECTION, debug=DEBUG)
+        if CORRECT_SR:
+            sonar.correctSlantRange(FIRST_REFLECTION, DEBUG, CORRECTION_WINDOW, CSR_BIAS)
         sonar.gammaCorrect(GAMMA)
         sonar.loadGK(track_input)
         sonar_stripes = sonar.splitIntoGKStripes()

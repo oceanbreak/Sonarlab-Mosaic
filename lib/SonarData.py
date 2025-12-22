@@ -214,14 +214,14 @@ class SonarData:
 
 
 
-    def _estimateFirstReflection2(self, rgt, threshold, start_refl, correction=20):
+    def _estimateFirstReflection2(self, rgt, start_refl, window, frst_refl_bias):
         # Remove last element because yellowfin has strange drop of data there
         rgt_log = np.log(rgt[start_refl:] + 0.001).astype(np.float32)[:-10] 
         rgt_fltrd = medfilt(rgt_log, 11)
         rgt_deriv = np.gradient(rgt_fltrd, np.arange(len(rgt_log)))
-        rgt_proc = self.convolve(rgt_fltrd, 51)
+        rgt_proc = self.convolve(rgt_fltrd, window)
         first_refl = np.where(rgt_proc == np.max(rgt_proc))[0][0]
-        return int(first_refl + start_refl + correction), rgt_proc
+        return int(first_refl + start_refl + frst_refl_bias), rgt_proc
     
 
     
@@ -266,7 +266,7 @@ class SonarData:
         return y_new
     
 
-    def correctSlantRange(self, threshold = 10, startrefl=0, debug=False):
+    def correctSlantRange(self, startrefl, debug, window_size, frst_refl_bias):
 
 
         if debug:
@@ -290,7 +290,7 @@ class SonarData:
             startrefl_pixels = int(startrefl * len(rgt) / slant_range )
             # print(f'start reflection: {startrefl_pixels}')
             try:
-                first_reflection, plot_data = self._estimateFirstReflection2(rgt, threshold, startrefl_pixels)
+                first_reflection, plot_data = self._estimateFirstReflection2(rgt, startrefl_pixels, window_size, frst_refl_bias)
 
                 if debug:
                     ax[0].clear()
