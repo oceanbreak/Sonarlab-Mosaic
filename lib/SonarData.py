@@ -189,8 +189,18 @@ class SonarData:
         if window_size % 2 == 0:
             raise ValueError
         half_window = (window_size-1)//2
-        left_part_multiplier = 0.01
-        right_part_multiplier = 100.0
+        window = np.ones((window_size))
+        window[half_window:] = window[half_window:] * (-1)
+        output = np.zeros((len(y_data)))
+        output[half_window : -half_window] = np.convolve(y_data, window, 'valid')
+        return output
+    
+    def convolve1(self, y_data, window_size):
+        if window_size % 2 == 0:
+            raise ValueError
+        half_window = (window_size-1)//2
+        left_part_multiplier = -1
+        right_part_multiplier = 1
         out_y = np.zeros((len(y_data)))
         for i in range(half_window, len(y_data)-half_window):
             left_part = 0
@@ -204,14 +214,14 @@ class SonarData:
 
 
 
-    def _estimateFirstReflection2(self, rgt, threshold, start_refl):
+    def _estimateFirstReflection2(self, rgt, threshold, start_refl, correction=20):
         # Remove last element because yellowfin has strange drop of data there
         rgt_log = np.log(rgt[start_refl:] + 0.001).astype(np.float32)[:-10] 
         rgt_fltrd = medfilt(rgt_log, 11)
         rgt_deriv = np.gradient(rgt_fltrd, np.arange(len(rgt_log)))
-        rgt_proc = self.convolve(rgt_fltrd, 51) * rgt_deriv
+        rgt_proc = self.convolve(rgt_fltrd, 51)
         first_refl = np.where(rgt_proc == np.max(rgt_proc))[0][0]
-        return int(first_refl + start_refl), rgt_proc
+        return int(first_refl + start_refl + correction), rgt_proc
     
 
     
