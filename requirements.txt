@@ -6,4 +6,5 @@ pyproj
 opencv-python
 scikit-image
 scikit-learn
+PySide6
 rasterio
