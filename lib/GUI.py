@@ -60,6 +60,17 @@ class MosaicGUI(QWidget):
         left_layout.addWidget(self.status_frame)
         left_layout.addStretch()
 
+        # ---- START / CANCEL BUTTONS ----
+        self.start_btn = QPushButton("Start")
+        self.cancel_btn = QPushButton("Cancel")
+        self.cancel_btn.setEnabled(False)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.addWidget(self.start_btn)
+        btn_layout.addWidget(self.cancel_btn)
+
+        left_layout.addLayout(btn_layout)
+
         # ================= RIGHT PANEL (SETTINGS) =================
         right_layout = QVBoxLayout()
 
@@ -144,6 +155,10 @@ class MosaicGUI(QWidget):
     # PUBLIC API
     # ==========================================================
 
+    def set_running(self, running: bool):
+        self.start_btn.setEnabled(not running)
+        self.cancel_btn.setEnabled(running)
+
 
     def load_settings(self, settings: dict):
         self.directory_edit.setText(str(settings.get("directory", "")))
@@ -191,7 +206,7 @@ class MosaicGUI(QWidget):
 
     def set_status(self, text, error=False):
         self.status_text.setText(text)
-        color = "#ff6666" if error else "#aaaaaa"
+        color = "#EC0909" if error else "#aaaaaa"
         self.status_text.setStyleSheet(f"color: {color};")
 
     # ==========================================================
