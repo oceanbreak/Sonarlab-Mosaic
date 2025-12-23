@@ -1,1 +1,1 @@
-pyinstaller -F -i SonarMosaic.ico main_gui2.py
+.venv\Scripts\pyinstaller -F -i icon.ico main_GUI.py
