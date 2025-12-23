@@ -1,0 +1,1 @@
+pyinstaller -F -i SonarMosaic.ico main_gui2.py
