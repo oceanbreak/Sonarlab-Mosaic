@@ -23,7 +23,10 @@ class Settings:
         self.correct_slantrange = False
         self.corsltrng_searchwindow = 51
         self.corsltrng_frst_refl_bias = 0
-        self.readfile()
+        try:
+            self.readfile()
+        except FileNotFoundError:
+            self.writefile()
 
 
     def __str__(self):
