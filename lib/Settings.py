@@ -42,12 +42,74 @@ class Settings:
                 f'{self.keys[12]}:{self.corsltrng_frst_refl_bias}\n'
 
 
+
+    def as_dict(self):
+        self. settings_dict = {self.keys[0]:self.directory,
+                self.keys[1]:self.map_scale,
+                self.keys[2]:self.cable_out,
+                self.keys[3]:self.map_margins,
+                self.keys[4]:self.gamma,
+                self.keys[5]:self.corwindow,
+                self.keys[6]:self.slantthreshold,
+                self.keys[7]:self.startsearchbottom,
+                self.keys[8]:self.stripescale,
+                self.keys[9]:self.debug,
+                self.keys[10]:self.correct_slantrange,
+                self.keys[11]:self.corsltrng_searchwindow,
+                self.keys[12]:self.corsltrng_frst_refl_bias}
+        return self.settings_dict
+    
+    def updateSettingsFromUI(self, settings_dict : dict):
+        for dict_key in settings_dict.keys():
+            # Path
+            if self.keys[0] ==  dict_key:
+                self.directory =  settings_dict[dict_key].rstrip()
+            # Map Scale
+            if self.keys[1] ==  dict_key:
+                self.map_scale = float(settings_dict[dict_key])
+            # Cable Out
+            if self.keys[2]  ==  dict_key:
+                cable_out = int(settings_dict[dict_key])
+                if cable_out < 0:
+                    self.cable_out = None
+                else:
+                    self.cable_out = cable_out
+            # Margins
+            if self.keys[3]  ==  dict_key:
+                self.map_margins = int(settings_dict[dict_key])
+            # Gamma
+            if self.keys[4]  ==  dict_key:
+                self.gamma = float(settings_dict[dict_key])
+            # Correction window
+            if self.keys[5]  ==  dict_key:
+                corwindow = int(settings_dict[dict_key])
+                self.corwindow = corwindow if corwindow%2 == 1 else corwindow + 1
+            # Slant range threshold
+            if self.keys[6]  ==  dict_key:
+                self.slantthreshold = int(settings_dict[dict_key])
+            # Start search bottom
+            if self.keys[7]  ==  dict_key:
+                self.startsearchbottom = int(settings_dict[dict_key])
+            # Stripe scale
+            if self.keys[8]  ==  dict_key:
+                self.stripescale = int(settings_dict[dict_key])
+                                # Stripe scale
+            if self.keys[9]  ==  dict_key:
+                self.debug = int(settings_dict[dict_key])
+
+            if self.keys[10]  ==  dict_key:
+                self.correct_slantrange = int(settings_dict[dict_key])
+            if self.keys[11]  ==  dict_key:
+                self.corsltrng_searchwindow = int(settings_dict[dict_key])
+            if self.keys[12]  ==  dict_key:
+                self.corsltrng_frst_refl_bias = int(settings_dict[dict_key])
+
     def readfile(self):
         with open(SETTINGS_FILE, 'r') as sett_read:
             for line in sett_read:
                 # Path
                 if self.keys[0] in line:
-                    self.directory = line.split(':')[1].rstrip()
+                    self.directory = ':'.join(line.split(':')[1:]).rstrip()
                 # Map Scale
                 if self.keys[1] in line:
                     self.map_scale = float(line.split(':')[1])
