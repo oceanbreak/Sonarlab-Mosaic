@@ -4,3 +4,6 @@ lib/__pycache__/
 *.pyc
 test*
 settings.cfg
+build
+dist
+*.spec
