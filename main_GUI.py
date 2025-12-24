@@ -6,6 +6,13 @@ from lib.GUI import MosaicGUI
 from lib.MosaicWorker import MosaicWorker
 from lib.Settings import Settings
 
+import os
+
+if 'PROJ_LIB' in os.environ:
+    del os.environ['PROJ_LIB']
+# # print(os.environ["PROJ_LIB"])
+os.environ["PROJ_LIB"] = '.venv\\Lib\\site-packages\\rasterio\\proj_data'
+# print(os.environ["PROJ_LIB"])
 
 class AppController:
     def __init__(self):

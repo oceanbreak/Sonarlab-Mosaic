@@ -58,11 +58,12 @@ class MosaicWorker(QObject):
 
     @Slot(str)
     def process(self):
+        self.image.emit(None)
         self._abort = False
         # Load XTF files
         xtf_list = glob.glob(os.path.join(self.settings.directory, '*.xtf'))
         # print(xtf_list)
-        self.status.emit(str(xtf_list))
+        self.status.emit('\n'.join(xtf_list))
 
         # Process data
         for xtf_file in xtf_list:
@@ -216,3 +217,4 @@ class MosaicWorker(QObject):
             self.status.emit(f"GeoTIFF file saved as {geotiff_file}")
         self.status.emit("Processing finished")
         self.finished.emit()
+        return

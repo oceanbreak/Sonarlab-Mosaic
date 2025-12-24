@@ -12,11 +12,12 @@ class MosaicGUI(QWidget):
     GUI module for sidescan sonar mosaic builder.
     """
 
-    def __init__(self, on_open_folder=None, on_apply_settings=None):
+    def __init__(self, on_open_folder=None, on_apply_settings=None, on_convert_rastr=None):
         super().__init__()
 
         self.on_open_folder = on_open_folder
         self.on_apply_settings = on_apply_settings
+        self.on_convert_rastr = on_convert_rastr
 
         self.setWindowTitle("Sidescan Mosaic Builder")
         self.setMinimumSize(900, 550)
@@ -34,8 +35,10 @@ class MosaicGUI(QWidget):
         # ================= LEFT PANEL =================
         left_layout = QVBoxLayout()
 
-        self.open_btn = QPushButton("Open XTF Folder")
+        self.open_btn = QPushButton("Open Folder")
+        self.convert_btn = QPushButton("Convert RASTR to XTF")
         self.open_btn.clicked.connect(self._open_folder)
+        self.convert_btn.clicked.connect(self._convert_rastr)
 
         self.preview_label = QLabel("Mosaic Preview")
         self.preview_label.setAlignment(Qt.AlignCenter)
@@ -55,7 +58,15 @@ class MosaicGUI(QWidget):
 
         status_layout.addWidget(self.status_text)
 
-        left_layout.addWidget(self.open_btn)
+        top_btn_layout = QHBoxLayout()
+        top_btn_layout.addWidget(self.open_btn)
+        top_btn_layout.addWidget(self.convert_btn)
+
+        # left_layout
+        # left_layout.addWidget(self.convert_btn)
+
+        left_layout.addLayout(top_btn_layout)
+        
         left_layout.addWidget(self.preview_label)
         left_layout.addWidget(self.status_frame)
         left_layout.addStretch()
@@ -104,11 +115,11 @@ class MosaicGUI(QWidget):
         self._add_setting("Filter Window Size:", self.corwindow_edit, "Window of filtering rotations of stripes")
         self._add_setting("Stripe Thickness:", self.stripescale_edit, "Scale of one individual sonar stripe in pixels (1 minimum)")
         self._add_setting("Slant Range Correction:", self.correct_slantrange_check, "Enable slant range correction")
-        self._add_setting("Threshold:", self.slantthreshold_edit, "Slant range threshold, not used")
+        # self._add_setting("Threshold:", self.slantthreshold_edit, "Slant range threshold, not used")
         self._add_setting("Start Bottom Search (m):", self.startsearchbottom_edit, "Start searching bottom from this value")
         self._add_setting("Convolution Window (px):", self.corsltrg_searchwindow_edit, "Window used to detect first reflection")
         self._add_setting("First Reflection Shift (px):", self.corcltrg_frst_refl_bias_edit, "Shift first reflection to avoid black stripe in the middle, pixels")
-        self._add_setting("Debug:", self.debug_check, "Enable debug output")
+        # self._add_setting("Debug:", self.debug_check, "Enable debug output")
 
         self.apply_btn = QPushButton("Apply")
         self.apply_btn.clicked.connect(self._apply_settings)
@@ -145,6 +156,10 @@ class MosaicGUI(QWidget):
             settings_dict = self.get_settings()
             self.on_apply_settings(settings_dict)
 
+    def _convert_rastr(self):
+        if self.on_convert_rastr:
+            self.on_convert_rastr()
+
     def _apply_settings(self):
         settings_dict = self.get_settings()
         self.set_status("Settings applied")
@@ -167,13 +182,13 @@ class MosaicGUI(QWidget):
         self.margins_edit.setText(str(settings.get("margins", "")))
         self.gamma_edit.setText(str(settings.get("gamma", "")))
         self.corwindow_edit.setText(str(settings.get("corwindow", "")))
-        self.slantthreshold_edit.setText(str(settings.get("slantthreshold", "")))
+        # self.slantthreshold_edit.setText(str(settings.get("slantthreshold", "")))
         self.startsearchbottom_edit.setText(str(settings.get("startsearchbottom", "")))
         self.stripescale_edit.setText(str(settings.get("stripescale", "")))
         self.corsltrg_searchwindow_edit.setText(str(settings.get("corsltrg_searchwindow", "")))
         self.corcltrg_frst_refl_bias_edit.setText(str(settings.get("corcltrg_frst_refl_bias", "")))
 
-        self.debug_check.setChecked(bool(int(settings.get("debug", 0))))
+        # self.debug_check.setChecked(bool(int(settings.get("debug", 0))))
         self.correct_slantrange_check.setChecked(bool(int(settings.get("correct_slantrange", 0))))
 
     def get_settings(self) -> dict:
@@ -184,16 +199,19 @@ class MosaicGUI(QWidget):
             "margins": int(self.margins_edit.text()),
             "gamma": float(self.gamma_edit.text()),
             "corwindow": int(self.corwindow_edit.text()),
-            "slantthreshold": int(self.slantthreshold_edit.text()),
+            # "slantthreshold": int(self.slantthreshold_edit.text()),
             "startsearchbottom": int(self.startsearchbottom_edit.text()),
             "stripescale": int(self.stripescale_edit.text()),
-            "debug": int(self.debug_check.isChecked()),
+            # "debug": int(self.debug_check.isChecked()),
             "correct_slantrange": int(self.correct_slantrange_check.isChecked()),
             "corsltrg_searchwindow": int(self.corsltrg_searchwindow_edit.text()),
             "corcltrg_frst_refl_bias": int(self.corcltrg_frst_refl_bias_edit.text())
         }
 
     def set_preview_image(self, image):
+        if image is None:
+            self.preview_label.clear()
+            return
         if isinstance(image, np.ndarray):
             image = self._numpy_to_qimage(image)
 
