@@ -1,1 +1,2 @@
-.venv\Scripts\pyinstaller -F -i icon.ico main_GUI.py
+.venv\Scripts\activate
+pyinstaller main_GUI.spec

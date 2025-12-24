@@ -6,4 +6,3 @@ test*
 settings.cfg
 build
 dist
-*.spec
