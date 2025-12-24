@@ -12,7 +12,7 @@ class Settings:
                      'debug', 'correct_slantrange', 'corsltrg_searchwindow', 'corcltrg_frst_refl_bias']
         self.directory = ''
         self.map_scale = 1.0
-        self.cable_out = None
+        self.cable_out = 0
         self.map_margins = 10 # Margins of map in meters
         self.gamma = 1.0
         self.corwindow = 11
