@@ -11,7 +11,7 @@ import os
 if 'PROJ_LIB' in os.environ:
     del os.environ['PROJ_LIB']
 # # print(os.environ["PROJ_LIB"])
-os.environ["PROJ_LIB"] = '.venv\\Lib\\site-packages\\rasterio\\proj_data'
+# os.environ["PROJ_LIB"] = '_internal\pyproj\proj_dir\share\proj'
 # print(os.environ["PROJ_LIB"])
 
 class AppController:
@@ -84,13 +84,13 @@ class AppController:
         self.gui.set_running(False)
 
         self.thread.quit()
-        # self.thread.wait()
+        self.thread.wait()
 
         self.worker.deleteLater()
         self.thread.deleteLater()
-
-        self.worker = None
-        self.thread = None
+# # 
+#         self.worker = None
+#         self.thread = None
 
 
 if __name__ == "__main__":

@@ -200,9 +200,11 @@ class MosaicGUI(QWidget):
             "gamma": float(self.gamma_edit.text()),
             "corwindow": int(self.corwindow_edit.text()),
             # "slantthreshold": int(self.slantthreshold_edit.text()),
+            "slantthreshold" : 0,
             "startsearchbottom": int(self.startsearchbottom_edit.text()),
             "stripescale": int(self.stripescale_edit.text()),
             # "debug": int(self.debug_check.isChecked()),
+            "debug" : 0,
             "correct_slantrange": int(self.correct_slantrange_check.isChecked()),
             "corsltrg_searchwindow": int(self.corsltrg_searchwindow_edit.text()),
             "corcltrg_frst_refl_bias": int(self.corcltrg_frst_refl_bias_edit.text())
