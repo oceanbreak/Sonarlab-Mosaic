@@ -129,7 +129,7 @@ if __name__ == '__main__':
         print('Processing track')
         TL_coordsGK = []
         BR_coordsGK = []
-        stripe_imgs = []
+        # stripe_imgs = []
 
         for stripe, rot, trackpoint in zip(sonar_stripes, rotations, offseted_track):
             stripe_img = SonarImageGK(stripe, TARGET_SCALE, STRIPE_SCALE)
@@ -137,7 +137,9 @@ if __name__ == '__main__':
             stripe_img.rotate(rot)
             TL_coordsGK.append(stripe_img.getGKcoordTopLeft())
             BR_coordsGK.append(stripe_img.getGKcoordBotRight())
-            stripe_imgs.append(stripe_img)
+            # stripe_imgs.append(stripe_img)
+            # del stripe_img
+            # gc.collect()
 
         print('Estimating map limits')
         TL_np = np.array(TL_coordsGK)
@@ -153,8 +155,13 @@ if __name__ == '__main__':
         mapGK = MapDrawer(TARGET_SCALE)
         mapGK.createCanvas((Map_leftX, Map_topY), (Map_rgtX, Map_botY))
 
-        for i, stripe in enumerate(stripe_imgs):
-            mapGK.placeStripeOnCanvas(stripe)
+        for stripe, rot, trackpoint in zip(sonar_stripes, rotations, offseted_track):
+            stripe_img = SonarImageGK(stripe, TARGET_SCALE, STRIPE_SCALE)
+            stripe_img.updateCenterGK(trackpoint)
+            stripe_img.rotate(rot)
+            mapGK.placeStripeOnCanvas(stripe_img)
+            # del stripe_img
+            # gc.collect()
 
         viewer = PictureViewer('Map', mapGK.getImage())
         viewer.show(10)
@@ -199,7 +206,7 @@ if __name__ == '__main__':
         del image
         del sonar_stripes
         del mapGK
-        del stripe_imgs
+        # del stripe_imgs
         # del viewer
         gc.collect()
 
