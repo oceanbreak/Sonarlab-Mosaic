@@ -16,7 +16,7 @@ from skimage import io
 from matplotlib import pyplot as plt
 import rasterio
 from rasterio.transform import from_origin
-
+import gc
 
 
 if __name__ == '__main__':
@@ -28,6 +28,7 @@ if __name__ == '__main__':
     path = askdirectory(initialdir=settings.directory)
     settings.directory = path
     settings.writefile()
+
 
 
     TARGET_SCALE = settings.map_scale
@@ -75,6 +76,9 @@ if __name__ == '__main__':
             for x, y in zip(GK_X, GK_Y):
                 wfile.write(f'{x};{y}\n')
         print(f'Writing file {track_file} done')
+
+        del sonar_data
+        gc.collect()
 
 # Generate maps
     for xtf_file in xtf_list:
@@ -155,17 +159,8 @@ if __name__ == '__main__':
         viewer = PictureViewer('Map', mapGK.getImage())
         viewer.show(10)
 
+
         margins = mapGK.getMarginMaps()
-
-        # cv2.imwrite(map_file, mapGK.getTransparent())
-        # io.imsave(map_file, mapGK.getTransparent())
-        # print(f'Saved image {map_file}')
-        # ref = Georef()
-        # ref.make(map_georef_file, margins)
-
-        ### Save GeoTiff
-        # Define the coordinates of the corners in the Pulkovo coordinate system
-        # Example: (left, bottom, right, top)
 
         left, right, bottom, top = mapGK.getCornersGK()
 
@@ -178,6 +173,7 @@ if __name__ == '__main__':
         # Calculate the transform (affine transformation matrix)
         transform = from_origin(left, top, (right - left) / width, (top - bottom) / height)
         image0 = mapGK.getTransparent()
+        mapGK.deleteCanvas()
         # MOVE CHANNEL AXES (RGB) to the beginning
         image = np.moveaxis(image0.squeeze(),-1,0)
 
@@ -198,6 +194,14 @@ if __name__ == '__main__':
 
         print(f"GeoTIFF file saved as {geotiff_file}")
 
+        # Clear
+        del sonar
+        del image
+        del sonar_stripes
+        del mapGK
+        del stripe_imgs
+        # del viewer
+        gc.collect()
 
         
 
