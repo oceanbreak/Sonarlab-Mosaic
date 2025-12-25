@@ -165,25 +165,6 @@ class SonarData:
         return len(refl_arr) + start_refl
     
 
-    def signalAproxFunc(self, x, a, b, c):
-        # return a*x**c + b
-        return 1 / (1 + np.exp(-x+a)*b) + c
-
-    
-
-    def minimizationFunc(self, input_arr, x_arr, y_arr):
-        a, b, c = input_arr
-        objectif = 0.0
-        for x, y in zip(x_arr, y_arr):
-            objectif += (y - self.signalAproxFunc(x, a, b, c))**2
-        return objectif
-    
-    def apporximateSignal(self, y_data):
-        x_data = np.arange(len(y_data))
-        a, b, c = [0,1,0]
-        x_res = minimize(self.minimizationFunc, [a, b, c], (x_data, y_data), 
-                        bounds=((0, None), (None, None), (None, None)), method='SLSQP', tol=0.1)
-        return x_res.x
     
     def convolve(self, y_data, window_size):
         if window_size % 2 == 0:
@@ -195,23 +176,6 @@ class SonarData:
         output[half_window : -half_window] = np.convolve(y_data, window, 'valid')
         return output
     
-    def convolve1(self, y_data, window_size):
-        if window_size % 2 == 0:
-            raise ValueError
-        half_window = (window_size-1)//2
-        left_part_multiplier = -1
-        right_part_multiplier = 1
-        out_y = np.zeros((len(y_data)))
-        for i in range(half_window, len(y_data)-half_window):
-            left_part = 0
-            right_part = 0
-            for j in range(i - half_window, i):
-                left_part += y_data[j] * left_part_multiplier
-            for j in range(i, i + half_window):
-                right_part += y_data[j] * right_part_multiplier
-            out_y[i] = left_part + right_part
-        return out_y
-
 
 
     def _estimateFirstReflection2(self, rgt, start_refl, window, frst_refl_bias):
@@ -224,34 +188,6 @@ class SonarData:
         return int(first_refl + start_refl + frst_refl_bias), rgt_proc
     
 
-    
-    def _estimateFirstReflection1(self, rgt, threshold, start_refl):
-        # Remove last element because yellowfin has strange drop of data there
-        rgt_log = np.log(rgt[start_refl:] + 0.001).astype(np.float32)[:-10] 
-        # rgt_log = rgt
-
-        rgt_fltrd = medfilt(rgt_log, 37)
-        # rgt_deriv = np.gradient(rgt_fltrd, np.arange(len(rgt_fltrd)))
-        # moving avertage
-        # rgt_fltrd = np.convolve(rgt_log, np.ones(20)/20, mode='valid')
-        # plt.plot(rgt_fltrd)
-        # plt.show()
-        min_val = np.min(rgt_fltrd)
-        start_search = np.where(rgt_fltrd == min_val)[0][0] # first entry of minimum value
-        # print(f'Search start from {start_search}')
-        index = start_search
-        signal_value = -9999
-        while signal_value < min_val + threshold:
-            index += 1
-            signal_value = rgt_fltrd[index]
-
-        
-
-        return index + start_refl, rgt_fltrd
-
-
-    
-    
     def calculateNewDistances(self, rgt, slant_range, fish_height, first_reflection):
         x0 = np.arange(len(rgt))
         L = x0[first_reflection:] * slant_range / len(rgt) # array of slant ranges for each reflection
@@ -402,7 +338,7 @@ class SonarData:
             second =  self.sonar_packets[ping_no].Second
             out_array.append(f'{year}/{month}/{day} {hour}:{minute}:{second};{x},{y}')
         return out_array
-
+    
 
 
     def __init__(self, xtf_file):
