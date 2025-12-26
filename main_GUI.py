@@ -77,6 +77,7 @@ class AppController:
         if self.worker:
             self.gui.set_status("Cancelling...")
             self.worker.abort()
+            # self.cleanup_thread()
 
     # ================= CLEANUP =================
 
@@ -84,7 +85,7 @@ class AppController:
         self.gui.set_running(False)
 
         self.thread.quit()
-        self.thread.wait()
+        # self.thread.wait()
 
         self.worker.deleteLater()
         self.thread.deleteLater()

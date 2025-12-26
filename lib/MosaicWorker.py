@@ -1,7 +1,7 @@
 import numpy as np
 from PySide6.QtCore import QObject, Signal, Slot
-import time
-
+# import time
+import gc
 from lib.Settings import Settings
 from lib.SonarData import SonarData
 from lib.Georef import Georef
@@ -19,6 +19,7 @@ from skimage import io
 from matplotlib import pyplot as plt
 import rasterio
 from rasterio.transform import from_origin
+import traceback
 
 
 class MosaicWorker(QObject):
@@ -55,11 +56,24 @@ class MosaicWorker(QObject):
 
     def abort(self):
         self._abort = True
+        # raise RuntimeError
+
+    def process(self):
+        self._abort = False
+        try:
+            self._process()
+            self.finished.emit()
+        except BaseException as e:
+            # This block catches the exception
+            self.status.emit(f"An exception occurred: {e}\nException type: {type(e).__name__}") # Prints a user-friendly message and the error message
+            traceback.print_exc()
+            self.cancelled.emit()
+
 
     @Slot(str)
-    def process(self):
+    def _process(self):
         self.image.emit(None)
-        self._abort = False
+
         # Load XTF files
         xtf_list = glob.glob(os.path.join(self.settings.directory, '*.xtf'))
         # print(xtf_list)
@@ -154,7 +168,6 @@ class MosaicWorker(QObject):
             self.status.emit(f'{status_head}Processing track')
             TL_coordsGK = []
             BR_coordsGK = []
-            stripe_imgs = []
 
             for stripe, rot, trackpoint in zip(sonar_stripes, rotations, offseted_track):
                 stripe_img = SonarImageGK(stripe, self.settings.map_scale, self.settings.stripescale)
@@ -162,9 +175,11 @@ class MosaicWorker(QObject):
                 stripe_img.rotate(rot)
                 TL_coordsGK.append(stripe_img.getGKcoordTopLeft())
                 BR_coordsGK.append(stripe_img.getGKcoordBotRight())
-                stripe_imgs.append(stripe_img)
+                # stripe_imgs.append(stripe_img)
+                # del stripe_img
+                # gc.collect()
 
-            self.status.emit(f'{status_head}Estimating map limits')
+            # print('Estimating map limits')
             TL_np = np.array(TL_coordsGK)
             BR_np = np.array(BR_coordsGK)
 
@@ -178,8 +193,13 @@ class MosaicWorker(QObject):
             mapGK = MapDrawer(self.settings.map_scale)
             mapGK.createCanvas((Map_leftX, Map_topY), (Map_rgtX, Map_botY))
 
-            for i, stripe in enumerate(stripe_imgs):
-                mapGK.placeStripeOnCanvas(stripe)
+            self.status.emit(f"{status_head}Building mosaic...")
+
+            for stripe, rot, trackpoint in zip(sonar_stripes, rotations, offseted_track):
+                stripe_img = SonarImageGK(stripe, self.settings.map_scale, self.settings.stripescale)
+                stripe_img.updateCenterGK(trackpoint)
+                stripe_img.rotate(rot)
+                mapGK.placeStripeOnCanvas(stripe_img)
 
             # viewer = PictureViewer('Map', mapGK.getImage())
             self.image.emit(mapGK.getImage())
@@ -215,6 +235,12 @@ class MosaicWorker(QObject):
                 dst.write(image)  # Write the image data to the first band
 
             self.status.emit(f"GeoTIFF file saved as {geotiff_file}")
+            del sonar
+            del image
+            del sonar_stripes
+            del mapGK
+            # del stripe_imgs
+            # del viewer
+            gc.collect()
         self.status.emit("Processing finished")
-        self.finished.emit()
         return
