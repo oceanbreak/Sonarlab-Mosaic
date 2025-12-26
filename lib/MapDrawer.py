@@ -22,8 +22,8 @@ class SonarImageGK:
         self.scale = dst_scale
         new_size = self.equalScale(img.widthM, img.heightM, dst_scale, stripe_scale_coeff)
         self.image = cv2.resize(img.image, new_size)
-        # Make darkest value 1
-        self.image[self.image<1] = 1
+        # # Make darkest value 1
+        # self.image[self.image<1] = 1
         # Convert to BGR
         self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
         self.alpha = np.ones(self.image.shape).astype(np.uint8)*255
