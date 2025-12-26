@@ -199,6 +199,7 @@ class SonarData:
         x0 = new_range
         x1 = np.linspace(0, new_range[-1], len(new_range))
         y_new = np.interp(x1, x0, rgt_corrected)
+        y_new[y_new < 1] = 1
         return y_new
     
 
@@ -271,12 +272,12 @@ class SonarData:
                 self.sonar_packets[ping_no].ping_chan_headers[0].SlantRange = new_slant_range
                 self.sonar_packets[ping_no].ping_chan_headers[1].SlantRange = new_slant_range
                 self.writeSonarLine(ping_no, new_rgt, new_lft)
-        self.generateFullImage()
+        self.generateFullImage(preserve_alpha=False)
 
             
 
 
-    def generateFullImage(self):
+    def generateFullImage(self, preserve_alpha = True):
         np_chan1 = pyxtf.concatenate_channel(self.sonar_packets,
                                              file_header=self.file_header, channel=0, weighted=True)
         np_chan2 = pyxtf.concatenate_channel(self.sonar_packets,
@@ -284,6 +285,8 @@ class SonarData:
 
         fullImage = np.concatenate((np_chan1, np_chan2), axis=1)
         self.fullImage = (fullImage - np.amin(fullImage)) / (np.amax(fullImage) - np.amin(fullImage))
+        if preserve_alpha:
+            self.fullImage[self.fullImage < 1/255] = 1/255
         # self.rawImage = np.copy(self.fullImage)
 
         return self.fullImage

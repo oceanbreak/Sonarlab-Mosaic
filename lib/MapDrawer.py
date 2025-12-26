@@ -27,7 +27,7 @@ class SonarImageGK:
         # Convert to BGR
         self.image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
         self.alpha = np.ones(self.image.shape).astype(np.uint8)*255
-        self.alpha[self.image<1] = 0
+        self.alpha[self.image==0] = 0
 
         # Store attributes
         self.shape = self.image.shape # Height First, width second, as in numpy
