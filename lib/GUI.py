@@ -172,7 +172,9 @@ class MosaicGUI(QWidget):
 
     def set_running(self, running: bool):
         self.start_btn.setEnabled(not running)
+        self.convert_btn.setEnabled(not running)
         self.cancel_btn.setEnabled(running)
+
 
 
     def load_settings(self, settings: dict):

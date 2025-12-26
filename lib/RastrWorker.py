@@ -19,7 +19,7 @@ from lib.Settings import Settings
 
 class RastrWorker(QObject):
     status = Signal(str)
-    image = Signal(np.ndarray)
+    # image = Signal(np.ndarray)
     finished = Signal()
     cancelled = Signal()
 
@@ -50,7 +50,9 @@ class RastrWorker(QObject):
     def _process(self):
         file_path = self.settings.directory
         RASTR_files = glob.glob(os.path.join(file_path, "*.lft")) 
-        for RASTR_file in RASTR_files:
+        for rastr_file_index, RASTR_file in enumerate(RASTR_files):
+            base_string = f'Processing {rastr_file_index + 1} of {len(RASTR_files)} files - {RASTR_file}:\n'
+            self.status.emit(f'{base_string}')
             if self._abort:
                 self.cancelled.emit()
                 return
@@ -143,7 +145,7 @@ class RastrWorker(QObject):
                         p.SensorYcoordinate = repeated_coordinates[glob_pos_index][0]
                         glob_pos_index += 1
                     else:
-                        print(f"No coordinate available for string {j}.")
+                        self.status.emit(f'{base_string}No coordinate available for string {j}.')
                     
                     p.SensorPrimaryAltitude = 10
                     p.SensorPitch = 15
@@ -175,3 +177,4 @@ class RastrWorker(QObject):
                     f.write(fh.to_bytes())
                     for p in pings:
                         f.write(p.to_bytes())
+        self.status.emit("RASTR to XTF converting finished")

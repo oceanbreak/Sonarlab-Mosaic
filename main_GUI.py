@@ -3,6 +3,7 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QThread
 
 from lib.GUI import MosaicGUI
+from lib.RastrWorker import RastrWorker
 from lib.MosaicWorker import MosaicWorker
 from lib.Settings import Settings
 
@@ -25,13 +26,17 @@ class AppController:
 
         self.thread = None
         self.worker = None
+        self.rastr_worker = None
         self.current_folder = None
+
+        self._cur_worker = 0 # 1 for  main, 2 for rastr
 
         self.settings = Settings()
 
         # ---- BUTTON CONNECTIONS ----
         self.gui.start_btn.clicked.connect(self.start_processing)
         self.gui.cancel_btn.clicked.connect(self.cancel_processing)
+        self.gui.convert_btn.clicked.connect(self.start_rastr2xtf)
 
         self.gui.load_settings(self.settings.as_dict())
         self.gui.show()
@@ -50,11 +55,32 @@ class AppController:
 
     # ================= THREAD CONTROL =================
 
+    def start_rastr2xtf(self):
+        self._cur_worker = 2
+        self.gui.set_running(True)
+        self.gui.set_status("Starting converting to XTF...")
+
+        self.thread = QThread()
+        self.rastr_worker = RastrWorker(self.settings)
+        self.rastr_worker.moveToThread(self.thread)
+
+        # ---- CONNECT SIGNALS ----
+        self.thread.started.connect(self.rastr_worker.process)
+
+        self.rastr_worker.status.connect(self.gui.set_status)
+        # self.rastr_worker.image.connect(self.gui.set_preview_image)
+
+        self.rastr_worker.finished.connect(self.cleanup_thread)
+        self.rastr_worker.cancelled.connect(self.cleanup_thread)
+
+        self.thread.start()
+
+
     def start_processing(self):
         # if not self.current_folder:
         #     self.gui.set_status("No folder selected", error=True)
         #     return
-
+        self._cur_worker = 1
         self.gui.set_running(True)
         self.gui.set_status("Starting processing...")
 
@@ -86,12 +112,14 @@ class AppController:
 
         self.thread.quit()
         # self.thread.wait()
-
-        self.worker.deleteLater()
+        if self._cur_worker == 1:
+            self.worker.deleteLater()
+        elif self._cur_worker == 2:
+            self.rastr_worker.deleteLater()
         self.thread.deleteLater()
-# # 
-#         self.worker = None
-#         self.thread = None
+        self._cur_worker = 0
+
+
 
 
 if __name__ == "__main__":
