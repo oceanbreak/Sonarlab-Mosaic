@@ -135,11 +135,22 @@ class MosaicWorker(QObject):
                 return
 
             if self.settings.correct_slantrange:
-                self.status.emit(f'{status_head}Applying slant range correction')
-                sonar.correctSlantRange(self.settings.startsearchbottom,
-                                        self.settings.debug,
-                                        self.settings.corsltrng_searchwindow,
-                                        self.settings.corsltrng_frst_refl_bias)
+                bottom_file = naming.get_bottom_file_name()
+                if os.path.isfile(bottom_file):
+                    self.status.emit(f'{status_head}Data found. Applying slant range correction')
+                    sonar.correctSlantRange(self.settings.startsearchbottom,
+                                            self.settings.debug,
+                                            self.settings.corsltrng_searchwindow,
+                                            self.settings.corsltrng_frst_refl_bias,
+                                            store_file=bottom_file,
+                                            data_provided=True)
+                else:
+                    self.status.emit(f'{status_head}Calculating and applying slant range correction')
+                    sonar.correctSlantRange(self.settings.startsearchbottom,
+                                            self.settings.debug,
+                                            self.settings.corsltrng_searchwindow,
+                                            self.settings.corsltrng_frst_refl_bias,
+                                            store_file=bottom_file)
             sonar.gammaCorrect(self.settings.gamma)
             sonar.loadGK(track_input)
             sonar_stripes = sonar.splitIntoGKStripes()

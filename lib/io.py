@@ -25,6 +25,10 @@ class FileNaming:
         outputfile =  '.'.join(self.base_name.split('.')[:-1]) + '.csv'
         return os.path.join(self.proc_folder, outputfile)
     
+    def get_bottom_file_name(self):
+        outputfile =  '.'.join(self.base_name.split('.')[:-1]) + '_Bottom_data.csv'
+        return os.path.join(self.proc_folder, outputfile)
+    
     def get_track_GK_name(self):
         outputfile =  '.'.join(self.base_name.split('.')[:-1]) + '-GK.csv'
         return os.path.join(self.proc_folder, outputfile)

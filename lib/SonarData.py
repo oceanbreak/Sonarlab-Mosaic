@@ -203,8 +203,7 @@ class SonarData:
         return y_new
     
 
-    def correctSlantRange(self, startrefl, debug, window_size, frst_refl_bias):
-
+    def correctSlantRange(self, startrefl, debug, window_size, frst_refl_bias, store_file = None, data_provided=False):
 
         if debug:
             fig, ax = plt.subplots(2, 1)
@@ -217,39 +216,71 @@ class SonarData:
             cv2.imshow('Estimate reflection', resize_sc_img)
             cv2.waitKey(1)
 
-        prev_first_reflection = 0
+        # Initiate array
+        first_ref_arr = []
 
-        for ping_no in range(len(self.sonar_packets)):
-            sys.stdout.write(f'\rAnalysing {ping_no} of {len(self.sonar_packets)} pings')
-            lft, rgt = self.getSonarLine(ping_no)
-            slant_range = self.sonar_packets[ping_no].ping_chan_headers[0].SlantRange
-            lft = lft[::-1] # Inverse to work nice
-            startrefl_pixels = int(startrefl * len(rgt) / slant_range )
-            # print(f'start reflection: {startrefl_pixels}')
-            try:
-                first_reflection, plot_data = self._estimateFirstReflection2(rgt, startrefl_pixels, window_size, frst_refl_bias)
+        if not data_provided:
+            prev_first_reflection = 0
+
+            # Estimate if not estimated
+
+
+            for ping_no in range(len(self.sonar_packets)):
+                sys.stdout.write(f'\rAnalysing {ping_no} of {len(self.sonar_packets)} pings')
+                lft, rgt = self.getSonarLine(ping_no)
+                slant_range = self.sonar_packets[ping_no].ping_chan_headers[0].SlantRange
+                lft = lft[::-1] # Inverse to work nice
+                
+                startrefl_pixels = int(startrefl * len(rgt) / slant_range )
+                # print(f'start reflection: {startrefl_pixels}')
+                try:
+                    first_reflection, plot_data = self._estimateFirstReflection2(rgt, startrefl_pixels, window_size, frst_refl_bias)
+
+                    if debug:
+                        ax[0].clear()
+                        ax[0].plot(plot_data)
+                        # ax[0].axvline(x=first_reflection, color='red')
+                        ax[0].set_title(f'Ping {ping_no}: log signal')
+                        plt.draw()
+                        plt.pause(0.001)
+                except IndexError:
+                    first_reflection = prev_first_reflection
+                prev_first_reflection = first_reflection
+                fish_height = slant_range * first_reflection / len(rgt)
+
+
+                first_ref_arr.append(first_reflection)
 
                 if debug:
-                    ax[0].clear()
-                    ax[0].plot(plot_data)
-                    # ax[0].axvline(x=first_reflection, color='red')
-                    ax[0].set_title(f'Ping {ping_no}: log signal')
-                    plt.draw()
-                    plt.pause(0.001)
-            except IndexError:
-                first_reflection = prev_first_reflection
-            prev_first_reflection = first_reflection
+                    # Update output_img
+                    for i in range(3): slant_corr_img[ping_no, :, i] = rgt
+                    cv2.circle(slant_corr_img, [first_reflection, ping_no], 3, [0,0,255])
+                    resize_sc_img = ut.ratioPreservedResize(slant_corr_img, (0,1000))
+                    cv2.imshow('Estimate reflection', resize_sc_img)
+                    cv2.waitKey(1)
+
+            # Store to file
+            if store_file is not None:
+                with open(store_file, 'w') as fwrite:
+                    for ping_no, first_reflection in enumerate(first_ref_arr):
+                        fwrite.write(f'{ping_no};{first_reflection}\n')          
+
+        else:
+            #  Load first reflections from file
+            with open(store_file, 'r') as fread:
+                for line in fread:
+                    _, first_reflection = line.split(';')
+                    first_ref_arr.append(int(first_reflection))
+
+        # +++++++++ ACTUAL CORRECTION ++++++++++++++++++++++++
+
+        for ping_no, first_reflection in zip(range(len(self.sonar_packets)), first_ref_arr):
+            slant_range = self.sonar_packets[ping_no].ping_chan_headers[0].SlantRange
+            lft, rgt = self.getSonarLine(ping_no)
+            lft = lft[::-1] # Inverse to work nice
             fish_height = slant_range * first_reflection / len(rgt)
-
-            if debug:
-                # Update output_img
-                for i in range(3): slant_corr_img[ping_no, :, i] = rgt
-                cv2.circle(slant_corr_img, [first_reflection, ping_no], 3, [0,0,255])
-                resize_sc_img = ut.ratioPreservedResize(slant_corr_img, (0,1000))
-                cv2.imshow('Estimate reflection', resize_sc_img)
-                cv2.waitKey(1)
-
             new_ranges = self.calculateNewDistances(rgt, slant_range, fish_height, first_reflection)
+
             if len(new_ranges) > 100:
                 new_rgt = self.remapChannel(rgt[first_reflection:], new_ranges)
                 new_lft = self.remapChannel(lft[first_reflection:], new_ranges)
