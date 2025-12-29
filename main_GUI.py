@@ -11,9 +11,10 @@ import os
 
 if 'PROJ_LIB' in os.environ:
     del os.environ['PROJ_LIB']
-# # print(os.environ["PROJ_LIB"])
+
+# !!!!!!!! UNCOMMENT the following  line for pyinstaller make
 # os.environ["PROJ_LIB"] = '_internal\pyproj\proj_dir\share\proj'
-# print(os.environ["PROJ_LIB"])
+
 
 class AppController:
     def __init__(self):
