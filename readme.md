@@ -26,7 +26,7 @@ pip install -r requirements.txt
 
 ## Окно интерфейса программы
 
-![image](img\main_window.png)
+![image](https://github.com/oceanbreak/Sonarlab-Mosaic/blob/master/img/main_window.png)
 
 ## Quick start
 1. Нажмите на кнопку **Open folder** для выбора директории, в которой находятся файлы ГБО. Значение поля ***directory*** в окне настроек изменится на путь к выбранной папке.
