@@ -94,6 +94,7 @@ class MosaicWorker(QObject):
             georef = naming.get_track_georef_name()
 
             sonar_data = SonarData(xtf_file)
+
             track = sonar_data.extractTrackWGS84()
             with open(track_file, 'w') as wfile:
                 for line in track:
@@ -128,7 +129,11 @@ class MosaicWorker(QObject):
             try:
 
                 track_input = loadCsvGK(track_GK_file)
-                sonar = SonarData(xtf_file)
+                sonar_data = SonarData(xtf_file)
+
+                sonar_data.generateFullImage()
+                sonar_data.gammaCorrect(self.settings.gamma)
+                self.image.emit(sonar_data.fullImage)
             except FileNotFoundError:
                 self.status.emit(f'{status_head}Missed files')
                 self.cancelled.emit()
@@ -138,7 +143,7 @@ class MosaicWorker(QObject):
                 bottom_file = naming.get_bottom_file_name()
                 if os.path.isfile(bottom_file):
                     self.status.emit(f'{status_head}Data found. Applying slant range correction')
-                    sonar.correctSlantRange(self.settings.startsearchbottom,
+                    sonar_data.correctSlantRange(self.settings.startsearchbottom,
                                             self.settings.debug,
                                             self.settings.corsltrng_searchwindow,
                                             self.settings.corsltrng_frst_refl_bias,
@@ -146,14 +151,14 @@ class MosaicWorker(QObject):
                                             data_provided=True)
                 else:
                     self.status.emit(f'{status_head}Calculating and applying slant range correction')
-                    sonar.correctSlantRange(self.settings.startsearchbottom,
+                    sonar_data.correctSlantRange(self.settings.startsearchbottom,
                                             self.settings.debug,
                                             self.settings.corsltrng_searchwindow,
                                             self.settings.corsltrng_frst_refl_bias,
                                             store_file=bottom_file)
-            sonar.gammaCorrect(self.settings.gamma)
-            sonar.loadGK(track_input)
-            sonar_stripes = sonar.splitIntoGKStripes()
+            sonar_data.gammaCorrect(self.settings.gamma)
+            sonar_data.loadGK(track_input)
+            sonar_stripes = sonar_data.splitIntoGKStripes()
 
             # Get rotations
             track_proc = TrackProcess(sonar_stripes)
@@ -246,7 +251,7 @@ class MosaicWorker(QObject):
                 dst.write(image)  # Write the image data to the first band
 
             self.status.emit(f"GeoTIFF file saved as {geotiff_file}")
-            del sonar
+            del sonar_data
             del image
             del sonar_stripes
             del mapGK
