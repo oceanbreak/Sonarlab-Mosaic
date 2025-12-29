@@ -180,7 +180,7 @@ if __name__ == '__main__':
         # Calculate the transform (affine transformation matrix)
         transform = from_origin(left, top, (right - left) / width, (top - bottom) / height)
         image0 = mapGK.getTransparent()
-        mapGK.deleteCanvas()
+        # mapGK.deleteCanvas()
         # MOVE CHANNEL AXES (RGB) to the beginning
         image = np.moveaxis(image0.squeeze(),-1,0)
 
