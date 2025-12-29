@@ -29,6 +29,7 @@ pip install -r requirements.txt
 ![image](https://github.com/oceanbreak/Sonarlab-Mosaic/blob/master/img/main_window.png)
 
 ## Quick start
+1. Запустите **main_GUI.py**, либо **sonarmosaic.exe**, если вы используете *release* версию.
 1. Нажмите на кнопку **Open folder** для выбора директории, в которой находятся файлы ГБО. Значение поля ***directory*** в окне настроек изменится на путь к выбранной папке.
 2. При необходимости конфертации файлов нажимите на кнопку **Convert RASTR to XTF**.
 3. Поставьте или уберите галочку с поля ***Slant Range Correction*** в зависимости от того, требуется ли корректировка на наклонную дальность.
