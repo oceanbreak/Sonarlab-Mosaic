@@ -141,7 +141,8 @@ class MosaicWorker(QObject):
 
             if self.settings.correct_slantrange:
                 bottom_file = naming.get_bottom_file_name()
-                if os.path.isfile(bottom_file):
+                # Check if bottom file exists and no force recalculation needed
+                if os.path.isfile(bottom_file) and not self.settings.recalc_slantrange:
                     self.status.emit(f'{status_head}Data found. Applying slant range correction')
                     sonar_data.correctSlantRange(self.settings.startsearchbottom,
                                             self.settings.debug,
