@@ -9,7 +9,8 @@ class Settings:
     def __init__(self):
         self.keys = ['directory', 'mapscale', 'cableout', 'margins',
                      'gamma', 'corwindow', 'slantthreshold', 'startsearchbottom', 'stripescale',
-                     'debug', 'correct_slantrange', 'corsltrg_searchwindow', 'corcltrg_frst_refl_bias']
+                     'debug', 'correct_slantrange', 'corsltrg_searchwindow', 'corcltrg_frst_refl_bias',
+                     'recalc_slantrange']
         self.directory = ''
         self.map_scale = 1.0
         self.cable_out = 0
@@ -21,6 +22,7 @@ class Settings:
         self.stripescale = 1
         self.debug=False
         self.correct_slantrange = False
+        self.recalc_slantrange = False
         self.corsltrng_searchwindow = 51
         self.corsltrng_frst_refl_bias = 0
         try:
@@ -42,7 +44,8 @@ class Settings:
                 f'{self.keys[9]}:{self.debug}\n' + \
                 f'{self.keys[10]}:{self.correct_slantrange}\n' + \
                 f'{self.keys[11]}:{self.corsltrng_searchwindow}\n' + \
-                f'{self.keys[12]}:{self.corsltrng_frst_refl_bias}\n'
+                f'{self.keys[12]}:{self.corsltrng_frst_refl_bias}\n' + \
+                f'{self.keys[13]}:{self.recalc_slantrange}\n'
 
 
 
@@ -59,7 +62,8 @@ class Settings:
                 self.keys[9]:self.debug,
                 self.keys[10]:self.correct_slantrange,
                 self.keys[11]:self.corsltrng_searchwindow,
-                self.keys[12]:self.corsltrng_frst_refl_bias}
+                self.keys[12]:self.corsltrng_frst_refl_bias,
+                self.keys[13]:self.recalc_slantrange}
         return self.settings_dict
     
     def updateSettingsFromUI(self, settings_dict : dict):
@@ -106,6 +110,8 @@ class Settings:
                 self.corsltrng_searchwindow = int(settings_dict[dict_key])
             if self.keys[12]  ==  dict_key:
                 self.corsltrng_frst_refl_bias = int(settings_dict[dict_key])
+            if self.keys[13]  ==  dict_key:
+                self.recalc_slantrange = int(settings_dict[dict_key])
 
     def readfile(self):
         with open(SETTINGS_FILE, 'r') as sett_read:
@@ -152,6 +158,8 @@ class Settings:
                     self.corsltrng_searchwindow = int(line.split(':')[1])
                 if self.keys[12] in line:
                     self.corsltrng_frst_refl_bias = int(line.split(':')[1])
+                if self.keys[13] in line:
+                    self.recalc_slantrange = int(line.split(':')[1])
 
     def writefile(self):
         if self.cable_out is None:
@@ -173,3 +181,4 @@ class Settings:
             sett_write.write(f'{self.keys[10]}:{self.correct_slantrange:.0f}\n')
             sett_write.write(f'{self.keys[11]}:{self.corsltrng_searchwindow:.0f}\n')
             sett_write.write(f'{self.keys[12]}:{self.corsltrng_frst_refl_bias:.0f}\n')
+            sett_write.write(f'{self.keys[13]}:{self.recalc_slantrange:.0f}\n')

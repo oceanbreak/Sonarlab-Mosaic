@@ -169,11 +169,12 @@ class SonarData:
     def convolve(self, y_data, window_size):
         if window_size % 2 == 0:
             raise ValueError
-        half_window = (window_size-1)//2
+        half_window = (window_size+1)//2
         window = np.ones((window_size))
-        window[half_window:] = window[half_window:] * (-1)
+        window[half_window+1:] = window[half_window+1:] * (-1)
+        window[half_window] = 0
         output = np.zeros((len(y_data)))
-        output[half_window : -half_window] = np.convolve(y_data, window, 'valid')
+        output[half_window-1 : -half_window+1] = np.convolve(y_data, window, 'valid')
         return output
     
 
@@ -203,7 +204,7 @@ class SonarData:
         return y_new
     
 
-    def correctSlantRange(self, startrefl, debug, window_size, frst_refl_bias, store_file = None, data_provided=False):
+    def correctSlantRange(self, startrefl, debug, window_size, frst_refl_bias, store_file = None, data_provided=False, recalc=False):
 
         if debug:
             fig, ax = plt.subplots(2, 1)
@@ -219,7 +220,7 @@ class SonarData:
         # Initiate array
         first_ref_arr = []
 
-        if not data_provided:
+        if not data_provided or recalc:
             prev_first_reflection = 0
 
             # Estimate if not estimated

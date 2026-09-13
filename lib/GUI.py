@@ -106,6 +106,7 @@ class MosaicGUI(QWidget):
 
         self.debug_check = QCheckBox()
         self.correct_slantrange_check = QCheckBox()
+        self.recalculate_slantrange_check = QCheckBox()
 
         self._add_setting("Directory:", self.directory_edit, "Path to data directory")
         self._add_setting("Map Scale (px/m):", self.mapscale_edit, "Resulting scale in Pixels per meter")
@@ -115,6 +116,7 @@ class MosaicGUI(QWidget):
         self._add_setting("Filter Window Size:", self.corwindow_edit, "Window of filtering rotations of stripes")
         self._add_setting("Stripe Thickness:", self.stripescale_edit, "Scale of one individual sonar stripe in pixels (1 minimum)")
         self._add_setting("Slant Range Correction:", self.correct_slantrange_check, "Enable slant range correction")
+        self._add_setting("Recalculate Slant Range:", self.recalculate_slantrange_check, "Force recalculating slant range")
         # self._add_setting("Threshold:", self.slantthreshold_edit, "Slant range threshold, not used")
         self._add_setting("Start Bottom Search (m):", self.startsearchbottom_edit, "Start searching bottom from this value")
         self._add_setting("Convolution Window (px):", self.corsltrg_searchwindow_edit, "Window used to detect first reflection")
@@ -192,6 +194,7 @@ class MosaicGUI(QWidget):
 
         # self.debug_check.setChecked(bool(int(settings.get("debug", 0))))
         self.correct_slantrange_check.setChecked(bool(int(settings.get("correct_slantrange", 0))))
+        self.recalculate_slantrange_check.setChecked(bool(int(settings.get("recalc_slantrange", 0))))
 
     def get_settings(self) -> dict:
         return {
@@ -209,7 +212,8 @@ class MosaicGUI(QWidget):
             "debug" : 0,
             "correct_slantrange": int(self.correct_slantrange_check.isChecked()),
             "corsltrg_searchwindow": int(self.corsltrg_searchwindow_edit.text()),
-            "corcltrg_frst_refl_bias": int(self.corcltrg_frst_refl_bias_edit.text())
+            "corcltrg_frst_refl_bias": int(self.corcltrg_frst_refl_bias_edit.text()),
+            "recalc_slantrange" : int(self.recalculate_slantrange_check.isChecked())
         }
 
     def set_preview_image(self, image):
